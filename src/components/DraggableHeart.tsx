@@ -11,15 +11,19 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
 	const [canDrop, setCanDrop] = useState(true);
+	const [showErrorMessage, setShowErrorMessage] = useState(false);
+	const [errorShake, setErrorShake] = useState(false);
+	const [errorFadeOut, setErrorFadeOut] = useState(false);
 	const heartRef = useRef<HTMLDivElement>(null);
 	const offsetRef = useRef({ x: 0, y: 0 });
 	const dragStartTimeRef = useRef<number>(0);
 	const hasDraggedRef = useRef(false);
 	const mouseDownPosRef = useRef({ x: 0, y: 0 });
 	const heartOriginalPosRef = useRef({ x: 0, y: 0 });
+	const canDropRef = useRef(true);
+	const errorTimeoutRef = useRef<number | null>(null);
 
 	const handleMouseDown = (e: React.MouseEvent) => {
-		console.log('Mouse down triggered');
 		if (!heartRef.current) return;
 
 		const rect = heartRef.current.getBoundingClientRect();
@@ -38,7 +42,6 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 		hasDraggedRef.current = false;
 		mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
 
-		console.log('Setting isDragging to true');
 		setIsDragging(true);
 
 		// 드래그 시작 시 초기 위치를 하트의 원래 위치로 설정 (마우스 위치가 아닌)
@@ -46,16 +49,12 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 			x: 0, // 하트 원래 위치에서 시작
 			y: 0,
 		};
-		console.log('Initial drag position:', initialPos);
-		console.log('Heart original position:', heartOriginalPosRef.current);
-		console.log('Mouse position:', { x: e.clientX, y: e.clientY });
 		setDragPosition(initialPos);
 
 		// useRef로 드래그 상태 추적
 		const isDraggingRef = { current: true };
 
 		const mouseMoveHandler = (e: MouseEvent) => {
-			console.log('Mouse move triggered, isDraggingRef:', isDraggingRef.current);
 			if (!isDraggingRef.current) return;
 
 			// 최소 이동 거리 체크 (5px 이상 이동해야 드래그로 인식)
@@ -63,10 +62,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 			const deltaY = Math.abs(e.clientY - mouseDownPosRef.current.y);
 			const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-			console.log('Mouse movement distance from start:', distance);
-
 			if (distance > 5) {
-				console.log('Distance threshold exceeded, marking as drag');
 				hasDraggedRef.current = true;
 			}
 
@@ -78,79 +74,115 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 
 			// 현재 호버 중인 상품 확인
 			const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
-			console.log('Mouse at:', e.clientX, e.clientY, 'Element below:', elementBelow);
 
 			const productCard = elementBelow?.closest('[data-product-id]');
-			console.log('Product card found:', productCard);
 
 			if (productCard) {
 				const productId = parseInt(productCard.getAttribute('data-product-id') || '0');
-				console.log('Product ID:', productId);
 
 				const product = products.find((p) => p.id === productId);
-				console.log(
-					'All products:',
-					products.map((p) => ({ id: p.id, isLiked: p.isLiked })),
-				);
 				if (product) {
 					const currentlyLiked = product.isLiked || false;
-					console.log('Product:', product.id, 'isLiked:', currentlyLiked, 'isLikeMode:', isLikeMode);
 					const cannotDrop = (isLikeMode && currentlyLiked) || (!isLikeMode && !currentlyLiked);
-					console.log('cannotDrop:', cannotDrop, 'setting canDrop to:', !cannotDrop);
 					const newCanDrop = !cannotDrop;
+
+					console.log(
+						'Product:',
+						productId,
+						'isLiked:',
+						currentlyLiked,
+						'isLikeMode:',
+						isLikeMode,
+						'cannotDrop:',
+						cannotDrop,
+						'newCanDrop:',
+						newCanDrop,
+					);
+
 					setCanDrop(newCanDrop);
+					canDropRef.current = newCanDrop;
 
 					// 상품 호버 상태 전달
 					onHoverProduct?.(productId, isLikeMode, newCanDrop);
 				}
 			} else {
-				console.log('No product card, setting canDrop to true');
 				setCanDrop(true);
+				canDropRef.current = true;
 				// 상품 호버 해제
 				onHoverProduct?.(null, isLikeMode, true);
 			}
 		};
 
 		const mouseUpHandler = (e: MouseEvent) => {
-			console.log('Mouse up triggered');
+			console.log('MouseUp triggered');
 			isDraggingRef.current = false;
 			setIsDragging(false);
 			document.removeEventListener('mousemove', mouseMoveHandler);
 			document.removeEventListener('mouseup', mouseUpHandler);
 
-			// 드래그 종료 시 호버 상태 초기화
-			onHoverProduct?.(null, isLikeMode, true);
+			// 현재 canDrop 상태를 ref에서 가져오기
+			const currentCanDrop = canDropRef.current;
 
 			// 클릭 판단 로직을 mouseUp에서 처리
 			const timeDiff = Date.now() - dragStartTimeRef.current;
 			const wasClick = !hasDraggedRef.current && timeDiff < 1000;
 
-			console.log('=== MOUSE UP CHECK ===');
-			console.log('hasDragged:', hasDraggedRef.current);
-			console.log('timeDiff:', timeDiff);
-			console.log('wasClick:', wasClick);
+			console.log('hasDragged:', hasDraggedRef.current, 'wasClick:', wasClick);
 
 			if (wasClick) {
-				console.log('TOGGLING mode from', isLikeMode, 'to', !isLikeMode);
+				console.log('Click detected');
 				setIsLikeMode(!isLikeMode);
 			} else if (hasDraggedRef.current) {
+				console.log('Drag detected, processing drop');
 				// 드래그였다면 드롭 처리
 				const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
 				const productCard = elementBelow?.closest('[data-product-id]');
 
-				if (productCard && canDrop) {
+				console.log('Drop target:', productCard, 'currentCanDrop:', currentCanDrop);
+
+				if (productCard) {
 					const productId = parseInt(productCard.getAttribute('data-product-id') || '0');
 					if (productId) {
-						onHeartDrop(productId, isLikeMode);
+						if (currentCanDrop) {
+							console.log('Valid drop');
+							onHeartDrop(productId, isLikeMode);
+						} else {
+							console.log('Invalid drop - showing error message');
+
+							// 기존 타이머가 있으면 취소
+							if (errorTimeoutRef.current) {
+								clearTimeout(errorTimeoutRef.current);
+							}
+
+							// canDrop이 false일 때 에러 메시지 표시
+							setShowErrorMessage(true);
+							setErrorShake(true);
+							setErrorFadeOut(false);
+
+							// 흔들기 애니메이션 제거
+							setTimeout(() => setErrorShake(false), 500);
+
+							// 1.3초 후 페이드아웃 시작, 2초 후 완전히 숨김
+							errorTimeoutRef.current = window.setTimeout(() => {
+								setErrorFadeOut(true);
+								setTimeout(() => {
+									setShowErrorMessage(false);
+									setErrorFadeOut(false);
+								}, 700);
+								errorTimeoutRef.current = null;
+							}, 1200);
+						}
 					}
 				}
 			}
 
+			// 드래그 종료 시 호버 상태 초기화
+			onHoverProduct?.(null, isLikeMode, true);
 			setDragPosition({ x: 0, y: 0 });
 			setCanDrop(true);
+			canDropRef.current = true;
 		};
 
-		console.log('Adding event listeners');
 		document.addEventListener('mousemove', mouseMoveHandler);
 		document.addEventListener('mouseup', mouseUpHandler);
 
@@ -262,6 +294,17 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 				</div>
 			)}
 
+			{/* 에러 메시지 (드롭 실패 시) */}
+			{showErrorMessage && (
+				<div
+					className={`fixed top-4 left-1/2 px-4 py-2 rounded-lg z-50 text-red-200 bg-red-900/90 transition-opacity duration-800 ${
+						errorShake ? 'animate-shake' : ''
+					} ${errorFadeOut ? 'opacity-0' : 'opacity-100'}`}
+					style={{ transform: 'translateX(-50%)' }}>
+					{isLikeMode ? '❌ 이미 탐내고 있는 상품입니다!' : '❌ 탐내지 않은 상품입니다!'}
+				</div>
+			)}
+
 			{/* 전역 스타일로 커서 강제 설정 */}
 			{isDragging && !canDrop && (
 				<style>{`
@@ -280,6 +323,20 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
           }
           .wiggle-animation {
             animation: wiggle 0.3s ease-in-out infinite;
+          }
+        `}</style>
+			)}
+
+			{/* 에러 메시지 흔들기 애니메이션 */}
+			{showErrorMessage && (
+				<style>{`
+          @keyframes shake {
+            0%, 100% { transform: translateX(-50%); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(calc(-50% - 8px)); }
+            20%, 40%, 60%, 80% { transform: translateX(calc(-50% + 8px)); }
+          }
+          .animate-shake {
+            animation: shake 0.5s ease-in-out;
           }
         `}</style>
 			)}
