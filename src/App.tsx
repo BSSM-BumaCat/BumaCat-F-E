@@ -6,6 +6,12 @@ import DraggableHeart from "./components/DraggableHeart";
 
 function App() {
   const [totalDonations] = useState(1003000);
+  const [hoveredProduct, setHoveredProduct] = useState<{
+    id: number;
+    isLikeMode: boolean;
+    canDrop: boolean;
+  } | null>(null);
+  
   const {
     filteredProducts,
     loading,
@@ -25,6 +31,14 @@ function App() {
     // 취소 모드: 이미 좋아요한 상품에만 적용
     if ((isLike && !currentlyLiked) || (!isLike && currentlyLiked)) {
       handleLikeToggle(productId);
+    }
+  };
+
+  const handleHoverProduct = (productId: number | null, isLikeMode: boolean, canDrop: boolean) => {
+    if (productId === null) {
+      setHoveredProduct(null);
+    } else {
+      setHoveredProduct({ id: productId, isLikeMode, canDrop });
     }
   };
 
@@ -57,9 +71,14 @@ function App() {
         searchTerm={searchTerm}
         onSearch={handleSearch}
         totalDonations={totalDonations}
+        hoveredProduct={hoveredProduct}
       />
       
-      <DraggableHeart onHeartDrop={handleHeartDrop} products={filteredProducts} />
+      <DraggableHeart 
+        onHeartDrop={handleHeartDrop} 
+        products={filteredProducts}
+        onHoverProduct={handleHoverProduct}
+      />
       <NoiseOverlay />
     </div>
   );

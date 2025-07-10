@@ -14,9 +14,14 @@ interface ProductGridProps {
 	searchTerm: string;
 	onSearch: (term: string) => void;
 	totalDonations: number;
+	hoveredProduct?: {
+		id: number;
+		isLikeMode: boolean;
+		canDrop: boolean;
+	} | null;
 }
 
-export default function ProductGrid({ products, onLikeToggle, searchTerm, onSearch, totalDonations }: ProductGridProps) {
+export default function ProductGrid({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct }: ProductGridProps) {
 	const [isSearchVisible, setIsSearchVisible] = useState(false);
 	const [canScrollDown, setCanScrollDown] = useState(false);
 	const [bounceAnimation, setBounceAnimation] = useState<'top' | 'bottom' | null>(null);
@@ -104,7 +109,12 @@ export default function ProductGrid({ products, onLikeToggle, searchTerm, onSear
 					onScroll={handleScroll}>
 					<div className="grid grid-cols-4 gap-4 w-fit">
 						{products.map((product) => (
-							<ProductCard key={product.id} product={product} onLikeToggle={onLikeToggle} />
+							<ProductCard 
+								key={product.id} 
+								product={product} 
+								onLikeToggle={onLikeToggle}
+								isHovered={hoveredProduct?.id === product.id}
+							/>
 						))}
 					</div>
 				</div>
