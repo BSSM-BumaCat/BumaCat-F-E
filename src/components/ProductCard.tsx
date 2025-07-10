@@ -19,10 +19,10 @@ export default function ProductCard({ product, onLikeToggle }: ProductCardProps)
 				style={{ backgroundImage: `url(${product.imageUrl})` }}
 			>
 				{/* 그라데이션 오버레이 */}
-				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+				<div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent group-hover:opacity-0 transition-opacity duration-300 ease-in-out" />
 
 				{/* 제품 정보 */}
-				<div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col">
+				<div className="absolute bottom-0 left-0 right-0 p-4 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out">
 					{/* 탐내요 버튼 */}
 					<button
 						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.25rem] px-1.5 mb-1.5 bg-white rounded-full"
