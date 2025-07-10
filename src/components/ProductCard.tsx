@@ -67,34 +67,64 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 				{/* 인스타그램 스타일 하트 이펙트 */}
 				{likeEffect && (
 					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-						<div className={`heart-burst ${product.isLiked ? 'heart-like' : 'heart-unlike'}`}>
-							<svg 
-								width="80" 
-								height="75" 
-								viewBox="0 0 11 10" 
-								fill="none" 
-								xmlns="http://www.w3.org/2000/svg"
-								className="drop-shadow-2xl"
-							>
-								<path 
-									d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z" 
-									fill={product.isLiked ? "url(#paint0_linear_burst)" : "#9CA3AF"}
-								/>
-								<defs>
-									<linearGradient 
-										id="paint0_linear_burst" 
-										x1="5.80001" 
-										y1="0.429016" 
-										x2="5.80001" 
-										y2="9.97102" 
-										gradientUnits="userSpaceOnUse"
-									>
-										<stop stopColor="#FF0D0D"/>
-										<stop offset="1" stopColor="#FF5093"/>
-									</linearGradient>
-								</defs>
-							</svg>
-						</div>
+						{product.isLiked ? (
+							/* 좋아요 효과 - 일반 하트 */
+							<div className="heart-burst heart-like">
+								<svg width="80" height="75" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
+									<path
+										d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
+										fill="url(#paint0_linear_burst)"
+									/>
+									<defs>
+										<linearGradient
+											id="paint0_linear_burst"
+											x1="5.80001"
+											y1="0.429016"
+											x2="5.80001"
+											y2="9.97102"
+											gradientUnits="userSpaceOnUse">
+											<stop stopColor="#FF0D0D" />
+											<stop offset="1" stopColor="#FF5093" />
+										</linearGradient>
+									</defs>
+								</svg>
+							</div>
+						) : (
+							/* 취소 효과 - 쪼개지는 하트 */
+							<>
+								{/* 왼쪽 하트 조각 */}
+								<div className="heart-break-left">
+									<svg
+										width="80"
+										height="75"
+										viewBox="0 0 11 10"
+										fill="none"
+										xmlns="http://www.w3.org/2000/svg"
+										className="drop-shadow-2xl">
+										<path
+											d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
+											fill="#9CA3AF"
+										/>
+									</svg>
+								</div>
+
+								{/* 오른쪽 하트 조각 */}
+								<div className="heart-break-right">
+									<svg
+										width="80"
+										height="75"
+										viewBox="0 0 11 10"
+										fill="none"
+										xmlns="http://www.w3.org/2000/svg"
+										className="drop-shadow-2xl">
+										<path
+											d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
+											fill="#9CA3AF"
+										/>
+									</svg>
+								</div>
+							</>
+						)}
 					</div>
 				)}
 
@@ -126,7 +156,7 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 					<div className="text-white text-base font-semibold">{product.price.toLocaleString()}원</div>
 				</div>
 			</div>
-			
+
 			{/* 인스타그램 스타일 하트 이펙트 CSS */}
 			{likeEffect && (
 				<style>{`
@@ -157,29 +187,30 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 						}
 					}
 					
-					@keyframes heartUnlike {
+					/* 하트 쪼개기 - 왼쪽 조각 */
+					@keyframes heartBreakLeft {
 						0% {
-							transform: scale(0);
-							opacity: 0;
-						}
-						15% {
-							transform: scale(1.2);
-							opacity: 1;
-						}
-						30% {
-							transform: scale(0.95);
-							opacity: 1;
-						}
-						45% {
-							transform: scale(1.1);
-							opacity: 1;
-						}
-						80% {
-							transform: scale(1);
+							transform: scale(1) rotate(0deg);
+							clip-path: polygon(0 0, 45% 0, 55% 20%, 40% 40%, 50% 60%, 35% 80%, 45% 100%, 0 100%);
 							opacity: 1;
 						}
 						100% {
-							transform: scale(1);
+							transform: scale(0.8) rotate(-10deg) translate(-10px, 20px);
+							clip-path: polygon(0 0, 45% 0, 55% 20%, 40% 40%, 50% 60%, 35% 80%, 45% 100%, 0 100%);
+							opacity: 0;
+						}
+					}
+					
+					/* 하트 쪼개기 - 오른쪽 조각 */
+					@keyframes heartBreakRight {
+						0% {
+							transform: scale(1) rotate(0deg);
+							clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%, 35% 80%, 50% 60%, 40% 40%, 55% 20%);
+							opacity: 1;
+						}
+						100% {
+							transform: scale(0.9) rotate(10deg) translate(20px, 20px);
+							clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%, 35% 80%, 50% 60%, 40% 40%, 55% 20%);
 							opacity: 0;
 						}
 					}
@@ -194,8 +225,14 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 						animation-name: heartLike;
 					}
 					
-					.heart-unlike {
-						animation-name: heartUnlike;
+					.heart-break-left {
+						animation: heartBreakLeft 1.0s ease-out forwards;
+						position: absolute;
+					}
+					
+					.heart-break-right {
+						animation: heartBreakRight 1.0s ease-out forwards;
+						position: absolute;
 					}
 				`}</style>
 			)}
