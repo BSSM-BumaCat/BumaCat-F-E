@@ -99,6 +99,7 @@ export default function ProductGrid({ products, onLikeToggle, searchTerm, onSear
 					style={{
 						msOverflowStyle: 'none',
 						WebkitOverflowScrolling: 'touch',
+						scrollbarWidth: 'none'
 					}}
 					onScroll={handleScroll}>
 					<div className="grid grid-cols-4 gap-4 w-fit">
@@ -110,6 +111,15 @@ export default function ProductGrid({ products, onLikeToggle, searchTerm, onSear
 
 				{/* CSS 애니메이션 정의 */}
 				<style>{`
+					/* 스크롤바 완전히 숨기기 */
+					.scrollbar-hide::-webkit-scrollbar {
+						display: none;
+					}
+					.scrollbar-hide {
+						-ms-overflow-style: none;
+						scrollbar-width: none;
+					}
+					
 					@keyframes smooth-bounce-top {
 						0% { transform: translateY(0); }
 						15% { transform: translateY(-12px); }
