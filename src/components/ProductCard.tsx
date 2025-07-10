@@ -13,7 +13,10 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, onLikeToggle }: ProductCardProps) {
 	return (
-		<div className="relative cursor-pointer group w-[12.5rem] h-[15.65rem]">
+		<div 
+			className="relative cursor-pointer group w-[12.5rem] h-[15.65rem]"
+			data-product-id={product.id}
+		>
 			<div 
 				className="w-full h-full bg-cover bg-center relative overflow-hidden"
 				style={{ backgroundImage: `url(${product.imageUrl})` }}
@@ -31,7 +34,7 @@ export default function ProductCard({ product, onLikeToggle }: ProductCardProps)
 							onLikeToggle(product.id);
 						}}>
 						{/* 하트 아이콘 */}
-						<FavoriteIcon />
+						<FavoriteIcon isLiked={product.isLiked} />
 						<span className="text-xs font-medium text-black leading-none">
 							{(product.favorites || 0) > 1000000
 								? `${Math.floor((product.favorites || 0) / 100000000)}억+명이 탐내요`
