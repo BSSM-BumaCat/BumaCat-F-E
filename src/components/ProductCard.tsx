@@ -28,6 +28,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered }: Produc
 
 	// 키보드 상태 추적
 	const [keyPressed, setKeyPressed] = useState<string | null>(null);
+	const [isShaking, setIsShaking] = useState(false);
 
 	// 키보드 이벤트 리스너
 	useEffect(() => {
@@ -47,42 +48,52 @@ export default function ProductCard({ product, onLikeToggle, isHovered }: Produc
 
 		window.addEventListener('keydown', handleKeyDown);
 		window.addEventListener('keyup', handleKeyUp);
-		
+
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown);
 			window.removeEventListener('keyup', handleKeyUp);
 		};
 	}, [keyPressed]);
 
+	// 흔들기 애니메이션 트리거
+	const triggerShake = () => {
+		setIsShaking(true);
+		setTimeout(() => setIsShaking(false), 500);
+	};
+
 	// 마우스 클릭 이벤트 처리
 	const handleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		
-		// + 키가 눌린 상태에서 클릭하면 좋아요 추가 (이미 좋아요가 아닌 경우에만)
-		if (keyPressed === '+' && !product.isLiked) {
-			onLikeToggle(product.id);
+
+		// + 키가 눌린 상태에서 클릭
+		if (keyPressed === '+') {
+			if (!product.isLiked) {
+				onLikeToggle(product.id);
+			} else {
+				// 이미 좋아요한 상품에 + 키로 시도하면 흔들기
+				triggerShake();
+			}
 		}
-		// - 키가 눌린 상태에서 클릭하면 좋아요 취소 (이미 좋아요인 경우에만)
-		else if (keyPressed === '-' && product.isLiked) {
-			onLikeToggle(product.id);
+		// - 키가 눌린 상태에서 클릭
+		else if (keyPressed === '-') {
+			if (product.isLiked) {
+				onLikeToggle(product.id);
+			} else {
+				// 좋아요하지 않은 상품에 - 키로 시도하면 흔들기
+				triggerShake();
+			}
 		}
 	};
 
 	return (
-		<div 
-			className="relative cursor-pointer group w-[12.5rem] h-[15.65rem]" 
-			data-product-id={product.id}
-			onClick={handleClick}
-		>
+		<div className="relative cursor-pointer group w-[12.5rem] h-[15.65rem]" data-product-id={product.id} onClick={handleClick}>
 			{/* 키보드 단축키 가이드 - 드래그 호버와 같은 스타일 */}
-			{keyPressed && (
-				<div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />
-			)}
+			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
 
 			{/* 키보드 단축키 하트 미리보기 */}
 			{keyPressed && (
 				<div className="absolute inset-0 flex items-center justify-center z-30">
-					<div className="transform scale-110 animate-pulse transition-all duration-300 ease-in-out">
+					<div className={`transform scale-110 transition-all duration-300 ease-in-out ${isShaking ? 'animate-shake' : 'animate-pulse'}`}>
 						<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
 							<path
 								d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
@@ -316,6 +327,21 @@ export default function ProductCard({ product, onLikeToggle, isHovered }: Produc
 					.heart-break-right {
 						animation: heartBreakRight 1.0s ease-out forwards;
 						position: absolute;
+					}
+				`}</style>
+			)}
+
+			{/* 흔들기 애니메이션 CSS - 키보드 단축키용 */}
+			{isShaking && (
+				<style>{`
+					@keyframes shake {
+						0%, 100% { transform: scale(1.1) translateX(0); }
+						10%, 30%, 50%, 70%, 90% { transform: scale(1.1) translateX(-6px); }
+						20%, 40%, 60%, 80% { transform: scale(1.1) translateX(6px); }
+					}
+					
+					.animate-shake {
+						animation: shake 0.5s ease-in-out;
 					}
 				`}</style>
 			)}
