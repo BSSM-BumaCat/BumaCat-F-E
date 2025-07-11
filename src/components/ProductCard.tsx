@@ -30,7 +30,7 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 			<div className="w-full h-full bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${product.imageUrl})` }}>
 				{/* 기본 그라데이션 오버레이 */}
 				<div
-					className={`absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
+					className={`absolute inset-0 bg-gradient-to-t from-black black black via-black/30 transparent transparent to-transparent group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
 						isHovered ? 'opacity-0' : ''
 					}`}
 				/>
@@ -130,7 +130,7 @@ export default function ProductCard({ product, isHovered }: ProductCardProps) {
 
 				{/* 제품 정보 */}
 				<div
-					className={`absolute bottom-0 left-0 right-0 p-4 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
+					className={`absolute bottom-0 left-0 right-0 p-4 pb-3.5 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
 						isHovered ? 'opacity-0' : ''
 					}`}>
 					{/* 탐내요 버튼 */}
