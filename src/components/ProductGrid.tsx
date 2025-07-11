@@ -52,13 +52,33 @@ export default function ProductGrid({
 	};
 
 	return (
-		<div className="relative" ref={scrollContainerRef}>
+		<div className="relative w-fit overflow-visible" ref={scrollContainerRef}>
 			{/* 제품 그리드 */}
-			<div
-				className={`w-fit transition-transform duration-300 ease-out relative ${
+			<div 
+				className={`w-fit transition-transform duration-300 ease-out relative overflow-visible ${
 					bounceAnimation === 'top' ? 'animate-bounce-top' : bounceAnimation === 'bottom' ? 'animate-bounce-bottom' : ''
 				}`}>
-				<div className="grid grid-cols-4 gap-4 w-fit">
+				{/* 블러된 원본 이미지 배경 (후광 효과) */}
+				<div className="absolute top-0 left-0 grid grid-cols-4 gap-4 w-fit z-0">
+					{products.map((product) => (
+						<div 
+							key={`blur-${product.id}`}
+							className="w-[12.5rem] h-[15.65rem] relative overflow-visible"
+						>
+							{/* 원본 이미지 블러 처리 */}
+							<div 
+								className="absolute -inset-1 bg-cover bg-center filter blur-xl opacity-30"
+								style={{ 
+									backgroundImage: `url(${product.imageUrl})`,
+									transform: 'scale(1.05)'
+								}}
+							/>
+						</div>
+					))}
+				</div>
+
+				{/* 메인 제품 그리드 */}
+				<div className="grid grid-cols-4 gap-4 w-fit relative z-20">
 					{products.map((product) => (
 						<ProductCard key={product.id} product={product} onLikeToggle={onLikeToggle} isHovered={hoveredProduct?.id === product.id} />
 					))}
@@ -66,7 +86,7 @@ export default function ProductGrid({
 
 				{/* 검색바 호버 영역 - ProductCard 위에 겹치게 배치 */}
 				<div
-					className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-[30rem] h-20"
+					className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 w-[30rem] h-20"
 					onMouseEnter={handleMouseEnter}
 					onMouseLeave={handleMouseLeave}>
 					{/* 검색바 */}

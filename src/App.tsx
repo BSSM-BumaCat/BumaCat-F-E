@@ -105,7 +105,7 @@ function App() {
 
 			{/* 메인 컨텐츠 영역 - 공지사항을 제외한 나머지 공간을 차지 */}
 			<div
-				className="flex-1 flex items-center justify-center p-8 overflow-y-auto overflow-x-hidden main-scroll-container"
+				className="flex-1 flex items-center justify-center p-16 overflow-y-auto overflow-x-visible main-scroll-container"
 				style={{
 					marginTop: showAnnouncement ? '52px' : '0', // 공지사항 높이만큼 여백
 					transition: 'margin-top 0.3s ease',
