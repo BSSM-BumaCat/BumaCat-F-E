@@ -4,9 +4,10 @@ interface DraggableHeartProps {
 	onHeartDrop: (productId: number, isLike: boolean) => void;
 	products: Array<{ id: number; isLiked?: boolean }>;
 	onHoverProduct?: (productId: number | null, isLikeMode: boolean, canDrop: boolean) => void;
+	onDragStateChange?: (isDragging: boolean) => void;
 }
 
-export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }: DraggableHeartProps) {
+export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, onDragStateChange }: DraggableHeartProps) {
 	const [isLikeMode, setIsLikeMode] = useState(true); // true = 빨간색(좋아요), false = 회색(취소)
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
@@ -43,6 +44,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 		mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
 
 		setIsDragging(true);
+		onDragStateChange?.(true);
 
 		// 드래그 시작 시 초기 위치를 하트의 원래 위치로 설정 (마우스 위치가 아닌)
 		const initialPos = {
@@ -117,6 +119,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct }
 			console.log('MouseUp triggered');
 			isDraggingRef.current = false;
 			setIsDragging(false);
+			onDragStateChange?.(false);
 			document.removeEventListener('mousemove', mouseMoveHandler);
 			document.removeEventListener('mouseup', mouseUpHandler);
 

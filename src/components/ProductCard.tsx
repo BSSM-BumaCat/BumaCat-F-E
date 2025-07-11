@@ -11,9 +11,10 @@ interface ProductCardProps {
 	product: ProductWithFavorites;
 	onLikeToggle: (productId: number) => void;
 	isHovered?: boolean;
+	keyPressed?: string | null;
 }
 
-export default function ProductCard({ product, onLikeToggle, isHovered }: ProductCardProps) {
+export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -26,34 +27,8 @@ export default function ProductCard({ product, onLikeToggle, isHovered }: Produc
 		}
 	}, [product.isLiked, previousLiked]);
 
-	// 키보드 상태 추적
-	const [keyPressed, setKeyPressed] = useState<string | null>(null);
+	// 키보드 상태는 상위에서 전달받음
 	const [isShaking, setIsShaking] = useState(false);
-
-	// 키보드 이벤트 리스너
-	useEffect(() => {
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === '+' || e.key === '=' || (e.shiftKey && e.key === '+')) {
-				setKeyPressed('+');
-			} else if (e.key === '-' || e.key === '_') {
-				setKeyPressed('-');
-			}
-		};
-
-		const handleKeyUp = (e: KeyboardEvent) => {
-			if (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_' || (!e.shiftKey && keyPressed === '+')) {
-				setKeyPressed(null);
-			}
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-		window.addEventListener('keyup', handleKeyUp);
-
-		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
-			window.removeEventListener('keyup', handleKeyUp);
-		};
-	}, [keyPressed]);
 
 	// 흔들기 애니메이션 트리거
 	const triggerShake = () => {

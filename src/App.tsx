@@ -15,6 +15,8 @@ function App() {
 	const [announcement, setAnnouncement] = useState<string | null>(null);
 	const [showAnnouncement, setShowAnnouncement] = useState(false);
 	const [bounceAnimation, setBounceAnimation] = useState<'top' | 'bottom' | null>(null);
+	const [isDragging, setIsDragging] = useState(false);
+	const [keyPressed, setKeyPressed] = useState<string | null>(null);
 	const lastScrollTop = useRef(0);
 	const productGridRef = useRef<ProductGridRef>(null);
 
@@ -56,6 +58,31 @@ function App() {
 
 		return () => clearInterval(interval);
 	}, []);
+
+	// 키보드 상태 감지
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === '+' || e.key === '=' || (e.shiftKey && e.key === '+')) {
+				setKeyPressed('+');
+			} else if (e.key === '-' || e.key === '_') {
+				setKeyPressed('-');
+			}
+		};
+
+		const handleKeyUp = (e: KeyboardEvent) => {
+			if (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_' || (!e.shiftKey && keyPressed === '+')) {
+				setKeyPressed(null);
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		window.addEventListener('keyup', handleKeyUp);
+		
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('keyup', handleKeyUp);
+		};
+	}, [keyPressed]);
 
 	// 전역 휠 이벤트 처리 - 배경 어디서든 스크롤 가능
 	useEffect(() => {
@@ -139,10 +166,17 @@ function App() {
 					totalDonations={totalDonations}
 					hoveredProduct={hoveredProduct}
 					bounceAnimation={bounceAnimation}
+					isDragging={isDragging}
+					keyPressed={keyPressed}
 				/>
 			</div>
 
-			<DraggableHeart onHeartDrop={handleHeartDrop} products={filteredProducts} onHoverProduct={handleHoverProduct} />
+			<DraggableHeart 
+				onHeartDrop={handleHeartDrop} 
+				products={filteredProducts} 
+				onHoverProduct={handleHoverProduct}
+				onDragStateChange={setIsDragging}
+			/>
 			<NoiseOverlay />
 		</div>
 	);

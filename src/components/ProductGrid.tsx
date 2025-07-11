@@ -20,6 +20,8 @@ interface ProductGridProps {
 		canDrop: boolean;
 	} | null;
 	bounceAnimation?: 'top' | 'bottom' | null;
+	isDragging?: boolean;
+	keyPressed?: string | null;
 }
 
 export interface ProductGridRef {
@@ -27,7 +29,7 @@ export interface ProductGridRef {
 }
 
 const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
-	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation }, ref) => {
+	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed }, ref) => {
 		const [isSearchVisible, setIsSearchVisible] = useState(false);
 		const [scrollTop, setScrollTop] = useState(0);
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
@@ -216,20 +218,25 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 										product={product}
 										onLikeToggle={onLikeToggle}
 										isHovered={hoveredProduct?.id === product.id}
+										keyPressed={keyPressed}
 									/>
 								))}
 						</div>
 
 						{/* 검색바 호버 영역 - ProductCard 위에 겹치게 배치 */}
-						<div
-							className="absolute top-6 left-1/2 transform -translate-x-1/2 z-50 w-[30rem] h-20"
-							onMouseEnter={handleMouseEnter}
-							onMouseLeave={handleMouseLeave}>
-							{/* 검색바 */}
-							<div className={`transition-all duration-600 ${isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-								<SearchBar searchTerm={searchTerm} onSearch={onSearch} totalDonations={totalDonations} />
+						{/* 드래그 중이거나 키보드가 눌린 상태에서는 검색바 요소를 완전히 제거 */}
+						{!isDragging && !keyPressed && (
+							<div
+								className="fixed top-34 left-1/2 transform -translate-x-1/2 z-50 w-[30rem] h-20"
+								onMouseEnter={handleMouseEnter}
+								onMouseLeave={handleMouseLeave}>
+								{/* 검색바 */}
+								<div
+									className={`transition-all duration-600 ${isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+									<SearchBar searchTerm={searchTerm} onSearch={onSearch} totalDonations={totalDonations} />
+								</div>
 							</div>
-						</div>
+						)}
 					</div>
 				</div>
 				{/* CSS 애니메이션 정의 */}
