@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useProducts } from './hooks/useProducts';
-import ProductGrid from './components/ProductGrid';
+import ProductGrid, { type ProductGridRef } from './components/ProductGrid';
 import NoiseOverlay from './components/NoiseOverlay';
 import DraggableHeart from './components/DraggableHeart';
 import Announcement from './components/Announcement';
@@ -16,6 +16,7 @@ function App() {
 	const [showAnnouncement, setShowAnnouncement] = useState(false);
 	const [bounceAnimation, setBounceAnimation] = useState<'top' | 'bottom' | null>(null);
 	const lastScrollTop = useRef(0);
+	const productGridRef = useRef<ProductGridRef>(null);
 
 	const { filteredProducts, loading, error, searchTerm, handleLikeToggle, handleSearch } = useProducts();
 
@@ -54,6 +55,24 @@ function App() {
 		const interval = setInterval(checkAnnouncement, 5000);
 
 		return () => clearInterval(interval);
+	}, []);
+
+	// 전역 휠 이벤트 처리 - 배경 어디서든 스크롤 가능
+	useEffect(() => {
+		const handleWheel = (e: WheelEvent) => {
+			// 모든 휠 이벤트를 ProductGrid 스크롤로 전달
+			e.preventDefault();
+			if (productGridRef.current) {
+				productGridRef.current.scrollToPosition(e.deltaY);
+			}
+		};
+
+		// 전역에 휠 이벤트 리스너 추가
+		window.addEventListener('wheel', handleWheel, { passive: false });
+		
+		return () => {
+			window.removeEventListener('wheel', handleWheel);
+		};
 	}, []);
 
 	// 스크롤 이벤트 처리
@@ -96,7 +115,7 @@ function App() {
 
 	return (
 		<div
-			className="min-h-screen w-full flex flex-col overscroll-none overflow-x-hidden pb-40"
+			className="min-h-screen w-full flex flex-col overscroll-none overflow-x-hidden"
 			style={{
 				backgroundColor: '#0D0C0C',
 			}}>
@@ -105,12 +124,14 @@ function App() {
 
 			{/* 메인 컨텐츠 영역 - 공지사항을 제외한 나머지 공간을 차지 */}
 			<div
-				className="flex-1 flex items-center justify-center p-16 overflow-y-auto overflow-x-visible main-scroll-container"
+				className="flex-1 flex items-center justify-center overflow-hidden main-scroll-container"
 				style={{
 					marginTop: showAnnouncement ? '52px' : '0', // 공지사항 높이만큼 여백
 					transition: 'margin-top 0.3s ease',
+					padding: '4rem', // 후광 효과를 위한 충분한 패딩
 				}}>
 				<ProductGrid
+					ref={productGridRef}
 					products={filteredProducts}
 					onLikeToggle={handleLikeToggle}
 					searchTerm={searchTerm}
