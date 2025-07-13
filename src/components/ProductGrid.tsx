@@ -366,8 +366,8 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 									<div
 										className={`fixed ${
 											layoutConfig.searchBarTop || 'top-4'
-										} left-1/2 transform -translate-x-1/2 z-50 w-fit transition-all duration-300 ease-in-out ${
-											isSearchBarVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+										} left-1/2 transform -translate-x-1/2 z-50 w-fit transition-all duration-500 ease-in-out ${
+											isSearchBarVisible ? 'translate-y-0 opacity-100' : '-translate-y-5 opacity-0'
 										}`}>
 										<SearchBar
 											searchTerm={searchTerm}
