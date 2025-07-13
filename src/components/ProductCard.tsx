@@ -26,10 +26,17 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
-	// 디버깅용 로그
-	if (isShaking) {
-		console.log(`Product ${product.id} is shaking!`);
-	}
+	// 애니메이션 리셋을 위한 상태
+	const [animationKey, setAnimationKey] = useState(0);
+
+	// isShaking 변화 감지하여 애니메이션 리셋
+	useEffect(() => {
+		if (isShaking) {
+			console.log(`Product ${product.id} is shaking!`);
+			// 애니메이션 키를 변경하여 강제 리렌더링
+			setAnimationKey((prev) => prev + 1);
+		}
+	}, [isShaking, product.id]);
 
 	// 하트 상태 변화 감지하여 이펙트 실행
 	useEffect(() => {
@@ -157,6 +164,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 				{(isHovered || isShaking) && (
 					<div className="absolute inset-0 flex items-center justify-center">
 						<div
+							key={`heart-${product.id}-${animationKey}`}
 							className={`transform scale-110 transition-all duration-300 ease-in-out ${
 								isShaking ? 'animate-shake-heart' : 'animate-pulse'
 							}`}>
@@ -391,6 +399,14 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 					
 					.animate-shake-heart {
 						animation: shakeHeart 0.6s ease-in-out forwards;
+						animation-fill-mode: forwards;
+					}
+					
+					/* 애니메이션 리셋을 위한 클래스 */
+					.animate-shake-heart-reset {
+						animation: none !important;
+						opacity: 1 !important;
+						transform: scale(1.1) translateX(0) !important;
 					}
 				`}</style>
 			)}

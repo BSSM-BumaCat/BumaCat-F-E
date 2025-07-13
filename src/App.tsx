@@ -18,6 +18,7 @@ function App() {
 	const [isDragging, setIsDragging] = useState(false);
 	const [keyPressed, setKeyPressed] = useState<string | null>(null);
 	const [shakingProduct, setShakingProduct] = useState<number | null>(null);
+	const shakeTimeoutRef = useRef<number | null>(null);
 	const lastScrollTop = useRef(0);
 	const productGridRef = useRef<ProductGridRef>(null);
 
@@ -46,12 +47,34 @@ function App() {
 
 	const handleProductShake = (productId: number) => {
 		console.log('Shaking product:', productId);
-		setShakingProduct(productId);
-		// 흔들기 애니메이션 후 자연스럽게 페이드아웃하기 위해 시간 연장
-		setTimeout(() => {
-			console.log('Stopping shake for product:', productId);
+		
+		// 기존 애니메이션이 진행 중이면 중단
+		if (shakeTimeoutRef.current) {
+			clearTimeout(shakeTimeoutRef.current);
+			shakeTimeoutRef.current = null;
+		}
+		
+		// 같은 상품이 이미 흔들리고 있으면 강제로 리셋하고 다시 시작
+		if (shakingProduct === productId) {
 			setShakingProduct(null);
-		}, 1000); // 0.6초 흔들기 + 0.4초 페이드아웃
+			// 짧은 지연으로 DOM 업데이트 후 다시 시작
+			setTimeout(() => {
+				setShakingProduct(productId);
+				shakeTimeoutRef.current = window.setTimeout(() => {
+					console.log('Stopping shake for product:', productId);
+					setShakingProduct(null);
+					shakeTimeoutRef.current = null;
+				}, 1000);
+			}, 10);
+		} else {
+			// 새로운 상품 흔들기 시작
+			setShakingProduct(productId);
+			shakeTimeoutRef.current = window.setTimeout(() => {
+				console.log('Stopping shake for product:', productId);
+				setShakingProduct(null);
+				shakeTimeoutRef.current = null;
+			}, 1000);
+		}
 	};
 
 	// 공지사항 확인
