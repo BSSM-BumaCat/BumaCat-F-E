@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface DraggableHeartProps {
 	onHeartDrop: (productId: number, isLike: boolean) => void;
@@ -23,6 +23,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 	const heartOriginalPosRef = useRef({ x: 0, y: 0 });
 	const canDropRef = useRef(true);
 	const errorTimeoutRef = useRef<number | null>(null);
+	const isDraggingRef = useRef(false);
 
 	const handleMouseDown = (e: React.MouseEvent) => {
 		if (!heartRef.current) return;
@@ -192,6 +193,155 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		e.preventDefault();
 	};
 
+	// Pointer Events API 사용 - 터치와 마우스 통합 처리
+	useEffect(() => {
+		const heart = heartRef.current;
+		if (!heart) return;
+
+		const handlePointerDown = (e: PointerEvent) => {
+			console.log('Pointer down detected:', e.pointerType);
+			
+			// 터치 또는 마우스 모두 처리
+			e.preventDefault();
+			e.stopPropagation();
+
+			const rect = heart.getBoundingClientRect();
+			offsetRef.current = {
+				x: e.clientX - rect.left,
+				y: e.clientY - rect.top,
+			};
+
+			// 하트의 원래 중앙 위치 저장 (화면 기준)
+			heartOriginalPosRef.current = {
+				x: rect.left + rect.width / 2,
+				y: rect.top + rect.height / 2,
+			};
+
+			dragStartTimeRef.current = Date.now();
+			hasDraggedRef.current = false;
+			mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+
+			// 즉시 드래그 상태 활성화
+			isDraggingRef.current = true;
+			setIsDragging(true);
+			onDragStateChange?.(true);
+
+			console.log('Pointer drag started', 'isDraggingRef:', isDraggingRef.current);
+
+			// 드래그 시작 시 초기 위치를 하트의 원래 위치로 설정
+			setDragPosition({ x: 0, y: 0 });
+
+			// Pointer capture로 모든 포인터 이벤트를 이 요소로 라우팅
+			heart.setPointerCapture(e.pointerId);
+		};
+
+		const handlePointerMove = (e: PointerEvent) => {
+			if (!isDraggingRef.current) return;
+			
+			console.log('Pointer move - dragging');
+			e.preventDefault();
+			e.stopPropagation();
+
+			const deltaX = Math.abs(e.clientX - mouseDownPosRef.current.x);
+			const deltaY = Math.abs(e.clientY - mouseDownPosRef.current.y);
+			const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+			if (distance > 5) {
+				hasDraggedRef.current = true;
+			}
+
+			const newPosition = {
+				x: e.clientX - heartOriginalPosRef.current.x,
+				y: e.clientY - heartOriginalPosRef.current.y,
+			};
+			setDragPosition(newPosition);
+
+			// 현재 호버 중인 상품 확인
+			const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+			const productCard = elementBelow?.closest('[data-product-id]');
+
+			if (productCard) {
+				const productId = parseInt(productCard.getAttribute('data-product-id') || '0');
+				const product = products.find((p) => p.id === productId);
+				if (product) {
+					const currentlyLiked = product.isLiked || false;
+					const cannotDrop = (isLikeMode && currentlyLiked) || (!isLikeMode && !currentlyLiked);
+					const newCanDrop = !cannotDrop;
+
+					setCanDrop(newCanDrop);
+					canDropRef.current = newCanDrop;
+					onHoverProduct?.(productId, isLikeMode, newCanDrop);
+				}
+			} else {
+				setCanDrop(true);
+				canDropRef.current = true;
+				onHoverProduct?.(null, isLikeMode, true);
+			}
+		};
+
+		const handlePointerUp = (e: PointerEvent) => {
+			if (!isDraggingRef.current) return;
+
+			console.log('Pointer up - finishing drag');
+			e.preventDefault();
+			e.stopPropagation();
+
+			isDraggingRef.current = false;
+			setIsDragging(false);
+			onDragStateChange?.(false);
+
+			const currentCanDrop = canDropRef.current;
+
+			// 클릭 판단 로직
+			const timeDiff = Date.now() - dragStartTimeRef.current;
+			const wasClick = !hasDraggedRef.current && timeDiff < 1000;
+
+			console.log('Pointer Up - wasClick:', wasClick, 'hasDragged:', hasDraggedRef.current);
+
+			if (wasClick) {
+				console.log('Pointer click detected - toggling mode');
+				setIsLikeMode(!isLikeMode);
+			} else if (hasDraggedRef.current) {
+				console.log('Pointer drag detected - processing drop');
+				// 드래그였다면 드롭 처리
+				const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+				const productCard = elementBelow?.closest('[data-product-id]');
+
+				if (productCard) {
+					const productId = parseInt(productCard.getAttribute('data-product-id') || '0');
+					if (productId && currentCanDrop) {
+						console.log('Valid pointer drop');
+						onHeartDrop(productId, isLikeMode);
+					}
+				}
+			}
+
+			// 드래그 종료 시 호버 상태 초기화
+			onHoverProduct?.(null, isLikeMode, true);
+			setDragPosition({ x: 0, y: 0 });
+			setCanDrop(true);
+			canDropRef.current = true;
+
+			// Pointer capture 해제
+			heart.releasePointerCapture(e.pointerId);
+		};
+
+		// Pointer Events 등록 - passive: false로 preventDefault 보장
+		heart.addEventListener('pointerdown', handlePointerDown, { passive: false });
+		heart.addEventListener('pointermove', handlePointerMove, { passive: false });
+		heart.addEventListener('pointerup', handlePointerUp, { passive: false });
+		heart.addEventListener('pointercancel', handlePointerUp, { passive: false });
+
+		return () => {
+			heart.removeEventListener('pointerdown', handlePointerDown);
+			heart.removeEventListener('pointermove', handlePointerMove);
+			heart.removeEventListener('pointerup', handlePointerUp);
+			heart.removeEventListener('pointercancel', handlePointerUp);
+		};
+	}, [isLikeMode, products, onHeartDrop, onHoverProduct, onDragStateChange]);
+
+
+
 	return (
 		<>
 			{/* 원형 배경 - 제자리 유지 */}
@@ -203,7 +353,11 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				style={{
 					zIndex: isDragging ? 1000 : 50,
 					cursor: isDragging && !canDrop ? 'not-allowed !important' : 'pointer',
-					pointerEvents: isDragging ? 'none' : 'auto',
+					pointerEvents: 'auto', // 항상 터치 가능하게 변경
+					touchAction: 'none', // 터치 액션 비활성화
+					userSelect: 'none',
+					WebkitUserSelect: 'none',
+					msUserSelect: 'none'
 				}}
 				onMouseDown={handleMouseDown}>
 				<div
@@ -308,11 +462,19 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				</div>
 			)}
 
-			{/* 전역 스타일로 커서 강제 설정 */}
-			{isDragging && !canDrop && (
+			{/* 드래그 중 전역 터치 스크롤 차단 */}
+			{isDragging && (
 				<style>{`
+          body, html {
+            touch-action: none !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            width: 100% !important;
+            height: 100% !important;
+          }
           * {
-            cursor: not-allowed !important;
+            touch-action: none !important;
+            ${!canDrop ? 'cursor: not-allowed !important;' : ''}
           }
         `}</style>
 			)}

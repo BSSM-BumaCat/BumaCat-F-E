@@ -43,6 +43,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 		setTimeout(() => setIsShaking(false), 500);
 	};
 
+
 	// 마우스 클릭 이벤트 처리
 	const handleClick = (e: React.MouseEvent) => {
 		e.stopPropagation();
@@ -66,6 +67,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			}
 		}
 	};
+
 
 	return (
 		<div 
@@ -171,7 +173,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 
 				{/* 인스타그램 스타일 하트 이펙트 */}
 				{likeEffect && (
-					<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+					<div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
 						{product.isLiked ? (
 							/* 좋아요 효과 - 일반 하트 */
 							<div className="heart-burst heart-like">
@@ -236,11 +238,16 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 				{/* 제품 정보 */}
 				<div
 					className={`absolute bottom-0 left-0 right-0 p-3.5 pb-3 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
-						isHovered ? 'opacity-0' : ''
+						isHovered || likeEffect ? 'opacity-0' : ''
 					}`}>
 					{/* 탐내요 버튼 */}
 					<button
-						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full"
+						className="flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none"
+						style={{ 
+							userSelect: 'none',
+							WebkitUserSelect: 'none',
+							msUserSelect: 'none'
+						}}
 						onClick={(e) => {
 							// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
 							if (keyPressed === '+' || keyPressed === '-') {
@@ -248,7 +255,9 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 								handleClick(e as React.MouseEvent);
 							} else {
 								e.stopPropagation();
-								// 일반 클릭으로는 하트 토글 비활성화
+								e.preventDefault();
+								// 일반 클릭 완전히 비활성화
+								return false;
 							}
 						}}>
 						{/* 하트 아이콘 */}
