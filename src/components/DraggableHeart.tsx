@@ -25,6 +25,18 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 	const errorTimeoutRef = useRef<number | null>(null);
 	const isDraggingRef = useRef(false);
 
+	// 드래그 상태 강제 정리 함수
+	const forceCleanupDragState = () => {
+		isDraggingRef.current = false;
+		setIsDragging(false);
+		onDragStateChange?.(false);
+		setDragPosition({ x: 0, y: 0 });
+		setCanDrop(true);
+		canDropRef.current = true;
+		hasDraggedRef.current = false;
+		onHoverProduct?.(null, isLikeMode, true);
+	};
+
 	const handleMouseDown = (e: React.MouseEvent) => {
 		if (!heartRef.current) return;
 
@@ -178,11 +190,15 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				}
 			}
 
-			// 드래그 종료 시 호버 상태 초기화
+			// 드래그 종료 시 모든 상태 강제 초기화
 			onHoverProduct?.(null, isLikeMode, true);
 			setDragPosition({ x: 0, y: 0 });
 			setCanDrop(true);
 			canDropRef.current = true;
+			
+			// 드래그 상태 확실히 해제
+			isDraggingRef.current = false;
+			hasDraggedRef.current = false;
 		};
 
 		document.addEventListener('mousemove', mouseMoveHandler);
@@ -338,11 +354,15 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				}
 			}
 
-			// 드래그 종료 시 호버 상태 초기화
+			// 드래그 종료 시 모든 상태 강제 초기화
 			onHoverProduct?.(null, isLikeMode, true);
 			setDragPosition({ x: 0, y: 0 });
 			setCanDrop(true);
 			canDropRef.current = true;
+			
+			// 드래그 상태 확실히 해제
+			isDraggingRef.current = false;
+			hasDraggedRef.current = false;
 
 			// Pointer capture 해제
 			heart.releasePointerCapture(e.pointerId);
@@ -361,6 +381,41 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			heart.removeEventListener('pointercancel', handlePointerUp);
 		};
 	}, [isLikeMode, products, onHeartDrop, onHoverProduct, onDragStateChange, onProductShake]);
+
+	// 전역 이벤트 리스너 추가 - 드래그 상태 정리
+	useEffect(() => {
+		const handleWindowBlur = () => {
+			if (isDraggingRef.current) {
+				console.log('Window blur - cleaning up drag state');
+				forceCleanupDragState();
+			}
+		};
+
+		const handleVisibilityChange = () => {
+			if (document.hidden && isDraggingRef.current) {
+				console.log('Page hidden - cleaning up drag state');
+				forceCleanupDragState();
+			}
+		};
+
+		const handleWindowFocus = () => {
+			// 포커스 복귀 시에도 안전하게 정리
+			if (isDraggingRef.current) {
+				console.log('Window focus - cleaning up drag state');
+				forceCleanupDragState();
+			}
+		};
+
+		window.addEventListener('blur', handleWindowBlur);
+		window.addEventListener('focus', handleWindowFocus);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
+		return () => {
+			window.removeEventListener('blur', handleWindowBlur);
+			window.removeEventListener('focus', handleWindowFocus);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+		};
+	}, []);
 
 
 
