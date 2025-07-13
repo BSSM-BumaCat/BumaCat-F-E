@@ -19,11 +19,17 @@ interface ProductCardProps {
 		maxCardHeight?: string;
 		searchBarTop?: string;
 	};
+	isShaking?: boolean;
 }
 
-export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig }: ProductCardProps) {
+export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
+
+	// 디버깅용 로그
+	if (isShaking) {
+		console.log(`Product ${product.id} is shaking!`);
+	}
 
 	// 하트 상태 변화 감지하여 이펙트 실행
 	useEffect(() => {
@@ -34,15 +40,12 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 		}
 	}, [product.isLiked, previousLiked]);
 
-	// 키보드 상태는 상위에서 전달받음
-	const [isShaking, setIsShaking] = useState(false);
-
-	// 흔들기 애니메이션 트리거
+	// 흔들기 애니메이션 트리거 (키보드 단축키용)
+	const [isKeyboardShaking, setIsKeyboardShaking] = useState(false);
 	const triggerShake = () => {
-		setIsShaking(true);
-		setTimeout(() => setIsShaking(false), 500);
+		setIsKeyboardShaking(true);
+		setTimeout(() => setIsKeyboardShaking(false), 500);
 	};
-
 
 	// 마우스 클릭 이벤트 처리
 	const handleClick = (e: React.MouseEvent) => {
@@ -68,11 +71,10 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 		}
 	};
 
-
 	return (
-		<div 
-			className="relative cursor-pointer group" 
-			data-product-id={product.id} 
+		<div
+			className="relative cursor-pointer group"
+			data-product-id={product.id}
 			onClick={handleClick}
 			style={{
 				width: layoutConfig?.cardWidth || '12.5rem',
@@ -86,7 +88,10 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			{/* 키보드 단축키 하트 미리보기 - 깜빡이는 하트 (액션 가능한 상품) */}
 			{keyPressed && ((keyPressed === '+' && !product.isLiked) || (keyPressed === '-' && product.isLiked)) && (
 				<div className="absolute inset-0 flex items-center justify-center z-30">
-					<div className={`transform scale-110 transition-all duration-300 ease-in-out ${isShaking ? 'animate-shake' : 'animate-pulse'}`}>
+					<div
+						className={`transform scale-110 transition-all duration-300 ease-in-out ${
+							isKeyboardShaking ? 'animate-shake' : 'animate-pulse'
+						}`}>
 						<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
 							<path
 								d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
@@ -112,7 +117,10 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			{/* 키보드 단축키 하트 미리보기 - 정적 하트 (액션 불가능한 상품) */}
 			{keyPressed && ((keyPressed === '+' && product.isLiked) || (keyPressed === '-' && !product.isLiked)) && (
 				<div className="absolute inset-0 flex items-center justify-center z-30">
-					<div className={`transform scale-110 transition-all duration-300 ease-in-out opacity-60 ${isShaking ? 'animate-shake' : ''}`}>
+					<div
+						className={`transform scale-110 transition-all duration-300 ease-in-out opacity-60 ${
+							isKeyboardShaking ? 'animate-shake' : ''
+						}`}>
 						<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
 							<path
 								d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
@@ -142,13 +150,16 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 					}`}
 				/>
 
-				{/* 드래그 호버 시 어두운 오버레이 */}
-				{isHovered && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />}
+				{/* 드래그 호버 시 또는 흔들기 시 어두운 오버레이 */}
+				{(isHovered || isShaking) && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />}
 
-				{/* 드래그 호버 시 중앙 하트 미리보기 */}
-				{isHovered && (
+				{/* 드래그 호버 시 또는 흔들기 시 중앙 하트 미리보기 */}
+				{(isHovered || isShaking) && (
 					<div className="absolute inset-0 flex items-center justify-center">
-						<div className="transform scale-110 animate-pulse transition-all duration-300 ease-in-out">
+						<div
+							className={`transform scale-110 transition-all duration-300 ease-in-out ${
+								isShaking ? 'animate-shake-heart' : 'animate-pulse'
+							}`}>
 							<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
 								<path
 									d="M5.80001 9.97102L5.04601 9.29502C4.17067 8.50635 3.44701 7.82602 2.87501 7.25402C2.30301 6.68202 1.84801 6.16852 1.51001 5.71352C1.17201 5.25852 0.935839 4.84035 0.801506 4.45902C0.667173 4.07768 0.600006 3.68768 0.600006 3.28902C0.600006 2.47435 0.873006 1.79402 1.41901 1.24802C1.96501 0.702016 2.64534 0.429016 3.46001 0.429016C3.91067 0.429016 4.33967 0.524349 4.74701 0.715016C5.15434 0.905683 5.50534 1.17435 5.80001 1.52102C6.09467 1.17435 6.44567 0.905683 6.85301 0.715016C7.26034 0.524349 7.68934 0.429016 8.14001 0.429016C8.95467 0.429016 9.63501 0.702016 10.181 1.24802C10.727 1.79402 11 2.47435 11 3.28902C11 3.68768 10.9328 4.07768 10.7985 4.45902C10.6642 4.84035 10.428 5.25852 10.09 5.71352C9.75201 6.16852 9.29701 6.68202 8.72501 7.25402C8.15301 7.82602 7.42934 8.50635 6.55401 9.29502L5.80001 9.97102Z"
@@ -238,15 +249,15 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 				{/* 제품 정보 */}
 				<div
 					className={`absolute bottom-0 left-0 right-0 p-3.5 pb-3 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
-						isHovered || likeEffect ? 'opacity-0' : ''
+						isHovered || likeEffect || isShaking ? 'opacity-0' : ''
 					}`}>
 					{/* 탐내요 버튼 */}
 					<button
 						className="flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none"
-						style={{ 
+						style={{
 							userSelect: 'none',
 							WebkitUserSelect: 'none',
-							msUserSelect: 'none'
+							msUserSelect: 'none',
 						}}
 						onClick={(e) => {
 							// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
@@ -357,8 +368,8 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 				`}</style>
 			)}
 
-			{/* 흔들기 애니메이션 CSS - 키보드 단축키용 */}
-			{isShaking && (
+			{/* 흔들기 애니메이션 CSS */}
+			{(isKeyboardShaking || isShaking) && (
 				<style>{`
 					@keyframes shake {
 						0%, 100% { transform: scale(1.1) translateX(0); }
@@ -366,8 +377,20 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 						20%, 40%, 60%, 80% { transform: scale(1.1) translateX(6px); }
 					}
 					
+					@keyframes shakeHeart {
+						0% { transform: scale(1.1) translateX(0); opacity: 1; }
+						10%, 30%, 50% { transform: scale(1.1) translateX(-6px); opacity: 1; }
+						20%, 40% { transform: scale(1.1) translateX(6px); opacity: 1; }
+						60% { transform: scale(1.1) translateX(0); opacity: 1; }
+						100% { transform: scale(1.1) translateX(0); opacity: 0; }
+					}
+					
 					.animate-shake {
 						animation: shake 0.5s ease-in-out;
+					}
+					
+					.animate-shake-heart {
+						animation: shakeHeart 0.6s ease-in-out forwards;
 					}
 				`}</style>
 			)}

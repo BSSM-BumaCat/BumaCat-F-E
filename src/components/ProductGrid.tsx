@@ -100,6 +100,7 @@ interface ProductGridProps {
 	bounceAnimation?: 'top' | 'bottom' | null;
 	isDragging?: boolean;
 	keyPressed?: string | null;
+	shakingProduct?: number | null;
 }
 
 export interface ProductGridRef {
@@ -107,7 +108,7 @@ export interface ProductGridRef {
 }
 
 const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
-	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed }, ref) => {
+	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed, shakingProduct }, ref) => {
 		const [isSearchVisible, setIsSearchVisible] = useState(false);
 		const [scrollTop, setScrollTop] = useState(0);
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
@@ -353,6 +354,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 										isHovered={hoveredProduct?.id === product.id}
 										keyPressed={keyPressed}
 										layoutConfig={layoutConfig}
+										isShaking={shakingProduct === product.id}
 									/>
 								))}
 						</div>

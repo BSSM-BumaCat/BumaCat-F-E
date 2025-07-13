@@ -17,6 +17,7 @@ function App() {
 	const [bounceAnimation, setBounceAnimation] = useState<'top' | 'bottom' | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [keyPressed, setKeyPressed] = useState<string | null>(null);
+	const [shakingProduct, setShakingProduct] = useState<number | null>(null);
 	const lastScrollTop = useRef(0);
 	const productGridRef = useRef<ProductGridRef>(null);
 
@@ -41,6 +42,16 @@ function App() {
 		} else {
 			setHoveredProduct({ id: productId, isLikeMode, canDrop });
 		}
+	};
+
+	const handleProductShake = (productId: number) => {
+		console.log('Shaking product:', productId);
+		setShakingProduct(productId);
+		// 흔들기 애니메이션 후 자연스럽게 페이드아웃하기 위해 시간 연장
+		setTimeout(() => {
+			console.log('Stopping shake for product:', productId);
+			setShakingProduct(null);
+		}, 1000); // 0.6초 흔들기 + 0.4초 페이드아웃
 	};
 
 	// 공지사항 확인
@@ -167,6 +178,7 @@ function App() {
 					bounceAnimation={bounceAnimation}
 					isDragging={isDragging}
 					keyPressed={keyPressed}
+					shakingProduct={shakingProduct}
 				/>
 			</div>
 
@@ -175,6 +187,7 @@ function App() {
 				products={filteredProducts} 
 				onHoverProduct={handleHoverProduct}
 				onDragStateChange={setIsDragging}
+				onProductShake={handleProductShake}
 			/>
 			<NoiseOverlay />
 		</div>

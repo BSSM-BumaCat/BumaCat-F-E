@@ -5,15 +5,15 @@ interface DraggableHeartProps {
 	products: Array<{ id: number; isLiked?: boolean }>;
 	onHoverProduct?: (productId: number | null, isLikeMode: boolean, canDrop: boolean) => void;
 	onDragStateChange?: (isDragging: boolean) => void;
+	onProductShake?: (productId: number) => void;
 }
 
-export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, onDragStateChange }: DraggableHeartProps) {
+export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, onDragStateChange, onProductShake }: DraggableHeartProps) {
 	const [isLikeMode, setIsLikeMode] = useState(true); // true = 빨간색(좋아요), false = 회색(취소)
 	const [isDragging, setIsDragging] = useState(false);
 	const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
 	const [canDrop, setCanDrop] = useState(true);
 	const [showErrorMessage, setShowErrorMessage] = useState(false);
-	const [errorShake, setErrorShake] = useState(false);
 	const [errorFadeOut, setErrorFadeOut] = useState(false);
 	const heartRef = useRef<HTMLDivElement>(null);
 	const offsetRef = useRef({ x: 0, y: 0 });
@@ -151,20 +151,18 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 							console.log('Valid drop');
 							onHeartDrop(productId, isLikeMode);
 						} else {
-							console.log('Invalid drop - showing error message');
+							console.log('Invalid drop - triggering product shake');
+							// 상품 흔들기 효과
+							onProductShake?.(productId);
 
 							// 기존 타이머가 있으면 취소
 							if (errorTimeoutRef.current) {
 								clearTimeout(errorTimeoutRef.current);
 							}
 
-							// canDrop이 false일 때 에러 메시지 표시
+							// canDrop이 false일 때 에러 메시지 표시 (흔들기 없이)
 							setShowErrorMessage(true);
-							setErrorShake(true);
 							setErrorFadeOut(false);
-
-							// 흔들기 애니메이션 제거
-							setTimeout(() => setErrorShake(false), 500);
 
 							// 1.3초 후 페이드아웃 시작, 2초 후 완전히 숨김
 							errorTimeoutRef.current = window.setTimeout(() => {
@@ -309,9 +307,33 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 
 				if (productCard) {
 					const productId = parseInt(productCard.getAttribute('data-product-id') || '0');
-					if (productId && currentCanDrop) {
-						console.log('Valid pointer drop');
-						onHeartDrop(productId, isLikeMode);
+					if (productId) {
+						if (currentCanDrop) {
+							console.log('Valid pointer drop');
+							onHeartDrop(productId, isLikeMode);
+						} else {
+							console.log('Invalid pointer drop - triggering product shake');
+							// 상품 흔들기 효과
+							onProductShake?.(productId);
+							
+							// 기존 에러 메시지도 표시
+							if (errorTimeoutRef.current) {
+								clearTimeout(errorTimeoutRef.current);
+							}
+
+							setShowErrorMessage(true);
+							setErrorFadeOut(false);
+
+							// 1.3초 후 페이드아웃 시작, 2초 후 완전히 숨김
+							errorTimeoutRef.current = window.setTimeout(() => {
+								setErrorFadeOut(true);
+								setTimeout(() => {
+									setShowErrorMessage(false);
+									setErrorFadeOut(false);
+								}, 700);
+								errorTimeoutRef.current = null;
+							}, 1200);
+						}
 					}
 				}
 			}
@@ -338,7 +360,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			heart.removeEventListener('pointerup', handlePointerUp);
 			heart.removeEventListener('pointercancel', handlePointerUp);
 		};
-	}, [isLikeMode, products, onHeartDrop, onHoverProduct, onDragStateChange]);
+	}, [isLikeMode, products, onHeartDrop, onHoverProduct, onDragStateChange, onProductShake]);
 
 
 
@@ -412,7 +434,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 						left: `${heartOriginalPosRef.current.x + dragPosition.x - 14}px`,
 						top: `${heartOriginalPosRef.current.y + dragPosition.y - 13}px`,
 						transform: 'scale(1.3)',
-						filter: 'drop-shadow(0 0 15px rgba(255, 13, 13, 0.8))',
+						filter: !canDrop ? 'drop-shadow(0 0 15px rgba(156, 163, 175, 0.8))' : 'drop-shadow(0 0 15px rgba(255, 13, 13, 0.8))',
 						zIndex: 1001,
 						pointerEvents: 'none',
 					}}>
@@ -455,8 +477,8 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			{showErrorMessage && (
 				<div
 					className={`fixed top-4 left-1/2 px-4 py-2 rounded-lg z-50 text-red-200 bg-red-900/90 transition-opacity duration-800 ${
-						errorShake ? 'animate-shake' : ''
-					} ${errorFadeOut ? 'opacity-0' : 'opacity-100'}`}
+						errorFadeOut ? 'opacity-0' : 'opacity-100'
+					}`}
 					style={{ transform: 'translateX(-50%)' }}>
 					{isLikeMode ? '❌ 이미 탐내고 있는 상품입니다!' : '❌ 탐내지 않은 상품입니다!'}
 				</div>
@@ -483,8 +505,8 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			{isDragging && (
 				<style>{`
           @keyframes wiggle {
-            0%, 100% { transform: rotate(-3deg); }
-            50% { transform: rotate(3deg); }
+            0%, 100% { transform: rotate(-3deg) scale(1.3); }
+            50% { transform: rotate(3deg) scale(1.3); }
           }
           .wiggle-animation {
             animation: wiggle 0.3s ease-in-out infinite;
@@ -492,19 +514,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
         `}</style>
 			)}
 
-			{/* 에러 메시지 흔들기 애니메이션 */}
-			{showErrorMessage && (
-				<style>{`
-          @keyframes shake {
-            0%, 100% { transform: translateX(-50%); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(calc(-50% - 8px)); }
-            20%, 40%, 60%, 80% { transform: translateX(calc(-50% + 8px)); }
-          }
-          .animate-shake {
-            animation: shake 0.5s ease-in-out;
-          }
-        `}</style>
-			)}
+
 		</>
 	);
 }
