@@ -224,7 +224,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 					}`}>
 					{/* 탐내요 버튼 */}
 					<button
-						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.325rem] px-1.5 mb-1 bg-white rounded-full"
+						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full"
 						onClick={(e) => {
 							// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
 							if (keyPressed === '+' || keyPressed === '-') {
