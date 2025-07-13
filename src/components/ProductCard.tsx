@@ -66,9 +66,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
 
 			{/* 키보드 단축키 하트 미리보기 - 깜빡이는 하트 (액션 가능한 상품) */}
-			{keyPressed && (
-				(keyPressed === '+' && !product.isLiked) || (keyPressed === '-' && product.isLiked)
-			) && (
+			{keyPressed && ((keyPressed === '+' && !product.isLiked) || (keyPressed === '-' && product.isLiked)) && (
 				<div className="absolute inset-0 flex items-center justify-center z-30">
 					<div className={`transform scale-110 transition-all duration-300 ease-in-out ${isShaking ? 'animate-shake' : 'animate-pulse'}`}>
 						<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
@@ -94,9 +92,7 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			)}
 
 			{/* 키보드 단축키 하트 미리보기 - 정적 하트 (액션 불가능한 상품) */}
-			{keyPressed && (
-				(keyPressed === '+' && product.isLiked) || (keyPressed === '-' && !product.isLiked)
-			) && (
+			{keyPressed && ((keyPressed === '+' && product.isLiked) || (keyPressed === '-' && !product.isLiked)) && (
 				<div className="absolute inset-0 flex items-center justify-center z-30">
 					<div className={`transform scale-110 transition-all duration-300 ease-in-out opacity-60 ${isShaking ? 'animate-shake' : ''}`}>
 						<svg width="60" height="56" viewBox="0 0 11 10" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-2xl">
@@ -223,12 +219,12 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 
 				{/* 제품 정보 */}
 				<div
-					className={`absolute bottom-0 left-0 right-0 p-4 pb-3.5 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
+					className={`absolute bottom-0 left-0 right-0 p-3.5 pb-3 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
 						isHovered ? 'opacity-0' : ''
 					}`}>
 					{/* 탐내요 버튼 */}
 					<button
-						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.25rem] px-1.5 mb-1.5 bg-white rounded-full"
+						className="flex items-center gap-1 hover:opacity-90 transition-opacity w-fit py-[0.325rem] px-1.5 mb-1 bg-white rounded-full"
 						onClick={(e) => {
 							// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
 							if (keyPressed === '+' || keyPressed === '-') {
