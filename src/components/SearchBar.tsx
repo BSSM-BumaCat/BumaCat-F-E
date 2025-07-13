@@ -8,7 +8,7 @@ export default function SearchBar({ searchTerm, onSearch, totalDonations }: Sear
 	return (
 		<div className="mb-8 flex justify-center">
 			<div
-				className="relative rounded-3xl overflow-hidden flex items-center bg-white/80 backdrop-blur-sm shadow-lg w-[28rem] h-10"
+				className="relative rounded-3xl overflow-hidden flex items-center bg-white/80 backdrop-blur-sm shadow-lg w-[32rem] h-[2.75rem]"
 				style={{
 					background: 'linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%), rgba(255, 255, 255, 0.79)',
 					boxShadow: '0rem 0.69rem 1rem 0rem rgba(49, 44, 37, 0.04)',

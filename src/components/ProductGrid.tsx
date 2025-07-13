@@ -227,7 +227,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						{/* 드래그 중이거나 키보드가 눌린 상태에서는 검색바 요소를 완전히 제거 */}
 						{!isDragging && !keyPressed && (
 							<div
-								className="fixed top-34 left-1/2 transform -translate-x-1/2 z-50 w-[30rem] h-20"
+								className="fixed top-34 left-1/2 transform -translate-x-1/2 z-50 w-fit h-20"
 								onMouseEnter={handleMouseEnter}
 								onMouseLeave={handleMouseLeave}>
 								{/* 검색바 */}
