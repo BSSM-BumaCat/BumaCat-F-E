@@ -12,9 +12,16 @@ interface ProductCardProps {
 	onLikeToggle: (productId: number) => void;
 	isHovered?: boolean;
 	keyPressed?: string | null;
+	layoutConfig?: {
+		cardWidth: string;
+		cardHeight: string;
+		maxCardWidth?: string;
+		maxCardHeight?: string;
+		searchBarTop?: string;
+	};
 }
 
-export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed }: ProductCardProps) {
+export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -61,7 +68,16 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 	};
 
 	return (
-		<div className="relative cursor-pointer group w-[12.5rem] h-[15.65rem]" data-product-id={product.id} onClick={handleClick}>
+		<div 
+			className="relative cursor-pointer group" 
+			data-product-id={product.id} 
+			onClick={handleClick}
+			style={{
+				width: layoutConfig?.cardWidth || '12.5rem',
+				height: layoutConfig?.cardHeight || '15.65rem',
+				maxWidth: layoutConfig?.maxCardWidth,
+				maxHeight: layoutConfig?.maxCardHeight,
+			}}>
 			{/* 키보드 단축키 가이드 - 모든 상품에 오버레이 */}
 			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
 

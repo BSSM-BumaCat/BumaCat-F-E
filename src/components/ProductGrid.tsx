@@ -3,6 +3,84 @@ import type { Product } from '../Root';
 import ProductCard from './ProductCard';
 import SearchBar from './SearchBar';
 
+// 디바이스별 레이아웃 계산 함수
+const getLayoutConfig = () => {
+	const width = window.innerWidth;
+	const height = window.innerHeight;
+	const isTouch = 'ontouchstart' in window;
+
+	console.log('Device info:', { width, height, isTouch, userAgent: navigator.userAgent });
+
+	// 아이패드 프로 감지 (화면 크기와 터치 지원)
+	if (isTouch && width >= 1024 && height >= 1366) {
+		console.log('Detected: iPad Pro - 4 cols, 5 rows');
+		return {
+			cols: 4,
+			rows: 5,
+			cardWidth: '11rem',
+			cardHeight: '13.75rem',
+			containerWidth: 'calc(4 * 11rem + 3 * 1rem)',
+			containerHeight: 'calc(5 * 13.75rem + 4 * 1rem)',
+			searchBarTop: 'top-38',
+		};
+	}
+	// 아이패드 일반/에어 감지
+	else if (isTouch && width >= 768 && width <= 1024) {
+		console.log('Detected: iPad Air/Regular - 4 cols, 5 rows');
+		return {
+			cols: 4,
+			rows: 5,
+			cardWidth: '9.5rem',
+			cardHeight: '11.875rem',
+			containerWidth: 'calc(4 * 9.5rem + 3 * 1rem)',
+			containerHeight: 'calc(5 * 11.875rem + 4 * 1rem)',
+			searchBarTop: 'top-34',
+		};
+	}
+	// 모바일 (터치 지원 + 작은 화면)
+	else if (isTouch && width <= 767) {
+		console.log('Detected: Mobile - 2 cols, full height, no padding');
+		return {
+			cols: 2,
+			rows: 'auto',
+			cardWidth: `calc((100vw - 2rem - 1rem) / 2)`,
+			cardHeight: `calc(((100vw - 2rem - 1rem) / 2) * 1.252)`,
+			containerWidth: `calc(100vw - 2rem)`,
+			containerHeight: `100vh`,
+			maxCardWidth: '12.5rem',
+			maxCardHeight: '15.65rem',
+			searchBarTop: 'top-16',
+			searchBarCompact: true,
+		};
+	}
+	// 태블릿 크기 데스크톱
+	else if (width <= 1024) {
+		console.log('Detected: Tablet size desktop - 4 cols, 4 rows');
+		return {
+			cols: 4,
+			rows: 4,
+			cardWidth: '10.5rem',
+			cardHeight: '13.125rem',
+			containerWidth: 'calc(4 * 10.5rem + 3 * 1rem)',
+			containerHeight: 'calc(4 * 13.125rem + 3 * 1rem)',
+			searchBarTop: 'top-34',
+		};
+	}
+	// 큰 화면 데스크톱
+	else {
+		console.log('Detected: Desktop - 4 cols, 3 rows');
+		return {
+			cols: 4,
+			rows: 3,
+			cardWidth: '12.5rem',
+			cardHeight: '15.65rem',
+			containerWidth: 'calc(4 * 12.5rem + 3 * 1rem)',
+			containerHeight: 'calc(3 * 15.65rem + 2 * 1rem)',
+			searchBarTop: 'top-34',
+		};
+	}
+};
+
 type ProductWithFavorites = Product & {
 	favorites?: number;
 	isLiked?: boolean;
@@ -33,6 +111,9 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 		const [isSearchVisible, setIsSearchVisible] = useState(false);
 		const [scrollTop, setScrollTop] = useState(0);
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
+		const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig);
+		const [isSearchBarVisible, setIsSearchBarVisible] = useState(true);
+		const [lastScrollTop, setLastScrollTop] = useState(0);
 		const scrollContainerRef = useRef<HTMLDivElement>(null);
 		const hideTimeoutRef = useRef<number | null>(null);
 
@@ -64,10 +145,33 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 			}, 1000);
 		};
 
-		// 스크롤 이벤트 핸들러 - 즉시 반영
+		// 스크롤 이벤트 핸들러 - 즉시 반영 및 검색바 제어
 		const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
 			const target = e.target as HTMLDivElement;
-			setScrollTop(target.scrollTop);
+			const currentScrollTop = target.scrollTop;
+			setScrollTop(currentScrollTop);
+
+			// 터치 디바이스에서만 스크롤 방향에 따른 검색바 제어
+			if ('ontouchstart' in window && layoutConfig.cols <= 4) {
+				const scrollDifference = currentScrollTop - lastScrollTop;
+				const scrollThreshold = 10; // 최소 스크롤 거리
+
+				if (Math.abs(scrollDifference) > scrollThreshold) {
+					if (scrollDifference > 0) {
+						// 아래로 스크롤: 검색바 숨기기
+						setIsSearchBarVisible(false);
+					} else {
+						// 위로 스크롤: 검색바 보이기
+						setIsSearchBarVisible(true);
+					}
+					setLastScrollTop(currentScrollTop);
+				}
+
+				// 맨 위에 있을 때는 항상 검색바 보이기
+				if (currentScrollTop <= 50) {
+					setIsSearchBarVisible(true);
+				}
+			}
 		};
 
 		// 렌더링 안정화 및 레이아웃 준비 상태 관리
@@ -159,27 +263,49 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 			};
 		}, [isLayoutReady]);
 
+		// 윈도우 리사이즈 시 레이아웃 재계산
+		useEffect(() => {
+			const handleResize = () => {
+				setLayoutConfig(getLayoutConfig());
+			};
+
+			window.addEventListener('resize', handleResize);
+			return () => window.removeEventListener('resize', handleResize);
+		}, []);
+
 		return (
-			<div className="relative product-grid-container">
+			<div className="relative product-grid-container max-w-fit mx-auto">
 				{/* 후광 효과용 오버레이 - 레이아웃 준비 완료 후에만 렌더링 */}
 				{isLayoutReady && products && products.length > 0 && (
 					<div
-						className="absolute pointer-events-none z-0"
+						className="absolute pointer-events-none z-0 blur-overlay"
 						style={{
 							left: 0,
 							top: 0,
-							width: 'calc(4 * 12.5rem + 3 * 1rem)',
-							height: 'calc(3 * 15.65rem + 2 * 1rem)',
+							width: layoutConfig.containerWidth,
+							height: layoutConfig.containerHeight,
 							overflow: 'visible',
 						}}>
 						<div
 							style={{
-								transform: `translateY(${-scrollTop}px)`, // 스크롤에 따라 즉시 이동
+								transform: `translateY(${-scrollTop}px)`,
 							}}>
 							{/* 후광 효과만을 위한 블러된 배경 */}
-							<div className="grid grid-cols-4 gap-4 w-fit">
+							<div
+								className="grid gap-4 w-fit"
+								style={{
+									gridTemplateColumns: `repeat(${layoutConfig.cols}, minmax(0, 1fr))`,
+								}}>
 								{products.map((product) => (
-									<div key={`blur-${product.id}`} className="w-[12.5rem] h-[15.65rem] relative overflow-visible">
+									<div
+										key={`blur-${product.id}`}
+										className="relative overflow-visible"
+										style={{
+											width: layoutConfig.cardWidth,
+											height: layoutConfig.cardHeight,
+											maxWidth: layoutConfig.maxCardWidth,
+											maxHeight: layoutConfig.maxCardHeight,
+										}}>
 										{/* 원본 이미지 블러 처리 */}
 										<div
 											className="absolute -inset-1 bg-cover bg-center filter blur-xl opacity-15"
@@ -197,10 +323,13 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 
 				{/* 스크롤 가능한 뷰포트 */}
 				<div
-					className="overflow-y-auto overflow-x-hidden scrollbar-hide relative z-10"
+					className="overflow-y-auto overflow-x-hidden scrollbar-hide relative z-10 viewport-container"
 					style={{
-						width: 'calc(4 * 12.5rem + 3 * 1rem)', // 4열 너비
-						height: 'calc(3 * 15.65rem + 2 * 1rem)', // 12개 상품(3행) 기준 높이
+						width: layoutConfig.containerWidth,
+						height: layoutConfig.containerHeight,
+						maxWidth: layoutConfig.maxCardWidth
+							? `calc(${layoutConfig.cols} * ${layoutConfig.maxCardWidth} + ${layoutConfig.cols - 1} * 1rem)`
+							: undefined,
 					}}
 					ref={scrollContainerRef}
 					onScroll={handleScroll}>
@@ -210,7 +339,11 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 							bounceAnimation === 'top' ? 'animate-bounce-top' : bounceAnimation === 'bottom' ? 'animate-bounce-bottom' : ''
 						}`}>
 						{/* 메인 제품 그리드 - 모든 상품 렌더링 */}
-						<div className="grid grid-cols-4 gap-4 w-fit relative z-20">
+						<div
+							className="grid gap-4 w-fit relative z-20"
+							style={{
+								gridTemplateColumns: `repeat(${layoutConfig.cols}, minmax(0, 1fr))`,
+							}}>
 							{products &&
 								products.map((product) => (
 									<ProductCard
@@ -219,27 +352,54 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 										onLikeToggle={onLikeToggle}
 										isHovered={hoveredProduct?.id === product.id}
 										keyPressed={keyPressed}
+										layoutConfig={layoutConfig}
 									/>
 								))}
 						</div>
 
-						{/* 검색바 호버 영역 - ProductCard 위에 겹치게 배치 */}
+						{/* 검색바 영역 */}
 						{/* 드래그 중이거나 키보드가 눌린 상태에서는 검색바 요소를 완전히 제거 */}
 						{!isDragging && !keyPressed && (
-							<div
-								className="fixed top-34 left-1/2 transform -translate-x-1/2 z-50 w-fit h-20"
-								onMouseEnter={handleMouseEnter}
-								onMouseLeave={handleMouseLeave}>
-								{/* 검색바 */}
-								<div
-									className={`transition-all duration-600 ${isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-									<SearchBar searchTerm={searchTerm} onSearch={onSearch} totalDonations={totalDonations} />
-								</div>
+							<div>
+								{/* 터치 디바이스에서는 스크롤 방향에 따라 표시/숨김 */}
+								{layoutConfig.cols <= 4 && 'ontouchstart' in window ? (
+									<div
+										className={`fixed ${
+											layoutConfig.searchBarTop || 'top-4'
+										} left-1/2 transform -translate-x-1/2 z-50 w-fit transition-all duration-300 ease-in-out ${
+											isSearchBarVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+										}`}>
+										<SearchBar
+											searchTerm={searchTerm}
+											onSearch={onSearch}
+											totalDonations={totalDonations}
+											compact={layoutConfig.searchBarCompact}
+										/>
+									</div>
+								) : (
+									/* 데스크톱에서는 호버로 표시 */
+									<div
+										className={`fixed ${layoutConfig.searchBarTop || 'top-34'} left-1/2 transform -translate-x-1/2 z-50 w-fit h-20`}
+										onMouseEnter={handleMouseEnter}
+										onMouseLeave={handleMouseLeave}>
+										<div
+											className={`transition-all duration-600 ${
+												isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+											}`}>
+											<SearchBar
+												searchTerm={searchTerm}
+												onSearch={onSearch}
+												totalDonations={totalDonations}
+												compact={layoutConfig.searchBarCompact}
+											/>
+										</div>
+									</div>
+								)}
 							</div>
 						)}
 					</div>
 				</div>
-				{/* CSS 애니메이션 정의 */}
+				{/* CSS 애니메이션 및 반응형 정의 */}
 				<style>{`
 				/* 스크롤바 완전히 숨기기 */
 				.scrollbar-hide::-webkit-scrollbar {
@@ -248,6 +408,48 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 				.scrollbar-hide {
 					-ms-overflow-style: none;
 					scrollbar-width: none;
+				}
+				
+				/* 반응형 패딩 - 화면 크기에 따라 패딩 조정 */
+				.responsive-padding {
+					padding: 4rem;
+				}
+				
+				@media (max-width: 1200px) {
+					.responsive-padding {
+						padding: 3rem;
+					}
+				}
+				
+				@media (max-width: 1000px) {
+					.responsive-padding {
+						padding: 2rem;
+					}
+				}
+				
+				@media (max-width: 900px) {
+					.responsive-padding {
+						padding: 1.5rem;
+					}
+				}
+				
+				@media (max-width: 600px) {
+					.responsive-padding {
+						padding: 1rem;
+					}
+				}
+				
+				@media (max-width: 400px) {
+					.responsive-padding {
+						padding: 0.5rem;
+					}
+				}
+				
+				/* 모바일에서 패딩 완전 제거 */
+				@media (max-width: 767px) and (pointer: coarse) {
+					.responsive-padding {
+						padding: 0 !important;
+					}
 				}
 				
 				@keyframes smooth-bounce-top {
