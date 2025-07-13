@@ -185,7 +185,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											className="absolute -inset-1 bg-cover bg-center filter blur-xl opacity-15"
 											style={{
 												backgroundImage: `url(${product.imageUrl})`,
-												transform: 'scale(1.04)',
+												transform: 'scale(1.3)',
 											}}
 										/>
 									</div>
