@@ -267,31 +267,79 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						<div
 							className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out"
 							style={gridStyles}>
-							{memoizedProducts.map((product) => (
-								<div 
-									className={`${product.isExpanded ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'} transition-all duration-500 ease-in-out`}
-									style={{
-										gridColumn: product.isExpanded ? 'span 2' : 'span 1',
-										gridRow: product.isExpanded ? 'span 2' : 'span 1',
-									}}
-								>
-									<ProductCard
+							{memoizedProducts.map((product, index) => {
+								const isExpanded = product.isExpanded;
+								const currentRow = Math.floor(index / layoutConfig.cols);
+								const currentCol = index % layoutConfig.cols;
+								
+								// 4번째 열(인덱스 3)에서 확대될 때의 특별 처리
+								const isFourthColumn = currentCol === 3;
+								
+								// 확대된 상품이 있는지 확인
+								const expandedFourthColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === 3);
+								const hasExpandedFourthColumn = expandedFourthColumnIndex !== -1;
+								
+								const expandedThirdColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === 2);
+								const hasExpandedThirdColumn = expandedThirdColumnIndex !== -1;
+								
+								// 확대/축소에 따른 그리드 위치 및 span 설정
+								let gridColumn, gridRow;
+								
+								if (isExpanded) {
+									if (isFourthColumn) {
+										// 4번째 열에서 확대 시 3-4열 위치로 설정
+										gridColumn = `3 / span 2`;
+										gridRow = `${currentRow + 1} / span 2`;
+									} else {
+										// 다른 열에서는 원래 위치에서 확대
+										gridColumn = `${currentCol + 1} / span 2`;
+										gridRow = `${currentRow + 1} / span 2`;
+									}
+								} else {
+									// 축소 상태 처리
+									if (isFourthColumn) {
+										// 4번째 열 처리: 3번째 열이나 4번째 열에 확대된 상품이 있으면 자동 배치
+										if (hasExpandedFourthColumn || hasExpandedThirdColumn) {
+											gridColumn = 'span 1';
+											gridRow = 'span 1';
+										} else {
+											// 확대된 상품이 없을 때만 명시적 위치
+											gridColumn = `4 / span 1`;
+											gridRow = `${currentRow + 1} / span 1`;
+										}
+									} else {
+										// 다른 열들은 자동 배치로 자연스러운 flow
+										gridColumn = 'span 1';
+										gridRow = 'span 1';
+									}
+								}
+								
+								return (
+									<div 
 										key={product.id}
-										product={product}
-										onLikeToggle={onLikeToggle}
-										isHovered={product.isHovered}
-										keyPressed={keyPressed || null}
-										layoutConfig={product.isExpanded ? {
-											...layoutConfig,
-											cardWidth: getExpandedCardSize(layoutConfig.cardWidth),
-											cardHeight: getExpandedCardSize(layoutConfig.cardHeight),
-										} : layoutConfig}
-										isShaking={product.isShaking}
-										isExpanded={product.isExpanded}
-										onExpand={() => onProductExpand?.(product.id)}
-									/>
-								</div>
-							))}
+										className={`transition-all duration-500 ease-in-out`}
+										style={{
+											gridColumn,
+											gridRow,
+										}}
+									>
+										<ProductCard
+											product={product}
+											onLikeToggle={onLikeToggle}
+											isHovered={product.isHovered}
+											keyPressed={keyPressed || null}
+											layoutConfig={isExpanded ? {
+												...layoutConfig,
+												cardWidth: getExpandedCardSize(layoutConfig.cardWidth),
+												cardHeight: getExpandedCardSize(layoutConfig.cardHeight),
+											} : layoutConfig}
+											isShaking={product.isShaking}
+											isExpanded={isExpanded}
+											onExpand={() => onProductExpand?.(product.id)}
+										/>
+									</div>
+								);
+							})}
 						</div>
 
 						{/* 검색바 영역 */}
