@@ -38,16 +38,6 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
 		const scrollContainerRef = useRef<HTMLDivElement>(null);
 		
-		// Calculate expanded card size with gap consideration
-		const getExpandedCardSize = useCallback((baseSize: string) => {
-			const baseSizeValue = parseFloat(baseSize);
-			// For 2x2 expansion: 
-			// - Need 2x the base size
-			// - Plus 1x gap (the gap between the 2x2 cells)
-			// - Grid gap is 1rem (gap-4 in Tailwind CSS)
-			// Final size: (baseSize * 2) + 1rem gap
-			return `calc(${baseSizeValue * 2}rem + 1rem)`;
-		}, []);
 		
 		// Custom hooks로 복잡한 로직 캡슐화
 		const { layoutConfig, isTouch, isMobile } = useDeviceLayout();
@@ -328,14 +318,11 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											onLikeToggle={onLikeToggle}
 											isHovered={product.isHovered}
 											keyPressed={keyPressed || null}
-											layoutConfig={isExpanded ? {
-												...layoutConfig,
-												cardWidth: getExpandedCardSize(layoutConfig.cardWidth),
-												cardHeight: getExpandedCardSize(layoutConfig.cardHeight),
-											} : layoutConfig}
+											layoutConfig={layoutConfig}
 											isShaking={product.isShaking}
 											isExpanded={isExpanded}
 											onExpand={() => onProductExpand?.(product.id)}
+											isFourthColumn={isFourthColumn}
 										/>
 									</div>
 								);

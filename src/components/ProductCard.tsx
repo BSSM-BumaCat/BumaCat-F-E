@@ -22,9 +22,10 @@ interface ProductCardProps {
 	isShaking?: boolean;
 	isExpanded?: boolean;
 	onExpand?: () => void;
+	isFourthColumn?: boolean;
 }
 
-const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking, isExpanded, onExpand }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking, isExpanded, onExpand, isFourthColumn }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -88,7 +89,7 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 		<div
 			className={`relative cursor-pointer group transition-all duration-500 ease-in-out ${
 				isExpanded ? 'z-50' : 'hover:shadow-lg'
-			}`}
+			} ${isFourthColumn ? 'fourth-column-animation' : ''}`}
 			data-product-id={product.id}
 			onClick={handleClick}
 			style={{
@@ -96,6 +97,8 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 				height: layoutConfig?.cardHeight || '15.65rem',
 				maxWidth: layoutConfig?.maxCardWidth,
 				maxHeight: layoutConfig?.maxCardHeight,
+				transformOrigin: isFourthColumn ? 'top right' : 'top left',
+				transform: isExpanded ? 'scale(2.08)' : 'scale(1)', // 2x + gap 계산: (2 * 12.5 + 16) / 12.5 = 2.08
 			}}>
 			{/* 키보드 단축키 가이드 - 모든 상품에 오버레이 */}
 			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
@@ -432,6 +435,20 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 						animation: none !important;
 						opacity: 1 !important;
 						transform: scale(1.1) translateX(0) !important;
+					}
+				`}</style>
+			)}
+
+			{/* 4번째 열 전용 Y축 대칭 애니메이션 CSS */}
+			{isFourthColumn && (
+				<style>{`
+					.fourth-column-animation {
+						transform-origin: top right !important;
+					}
+					
+					/* 4번째 열 확대/축소 시 Y축 대칭 애니메이션 */
+					.fourth-column-animation.transition-all {
+						transition: all 0.5s ease-in-out;
 					}
 				`}</style>
 			)}
