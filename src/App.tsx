@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useProducts } from './hooks/useProducts';
 import ProductGrid, { type ProductGridRef } from './components/ProductGrid';
 import NoiseOverlay from './components/NoiseOverlay';
@@ -22,7 +22,38 @@ function App() {
 	const lastScrollTop = useRef(0);
 	const productGridRef = useRef<ProductGridRef>(null);
 
-	const { filteredProducts, loading, error, searchTerm, handleLikeToggle, handleSearch } = useProducts();
+	const { data: products, isLoading, error } = useProducts();
+	const [searchTerm, setSearchTerm] = useState('');
+	const [likedProducts, setLikedProducts] = useState<Set<number>>(new Set());
+
+	// 검색 필터링
+	const filteredProducts = useMemo(() => {
+		if (!products) return [];
+		if (!searchTerm) return products.map(p => ({ ...p, isLiked: likedProducts.has(p.id), favorites: Math.floor(Math.random() * 1000) + 100 }));
+		
+		return products
+			.filter(product => 
+				product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				product.description.toLowerCase().includes(searchTerm.toLowerCase())
+			)
+			.map(p => ({ ...p, isLiked: likedProducts.has(p.id), favorites: Math.floor(Math.random() * 1000) + 100 }));
+	}, [products, searchTerm, likedProducts]);
+
+	const handleLikeToggle = (productId: number) => {
+		setLikedProducts(prev => {
+			const newSet = new Set(prev);
+			if (newSet.has(productId)) {
+				newSet.delete(productId);
+			} else {
+				newSet.add(productId);
+			}
+			return newSet;
+		});
+	};
+
+	const handleSearch = (term: string) => {
+		setSearchTerm(term);
+	};
 
 	const handleHeartDrop = (productId: number, isLike: boolean) => {
 		const product = filteredProducts.find((p) => p.id === productId);
@@ -164,14 +195,15 @@ function App() {
 			scrollContainer.addEventListener('scroll', handleScroll);
 			return () => scrollContainer.removeEventListener('scroll', handleScroll);
 		}
+		return undefined;
 	}, []);
 
-	if (loading) {
+	if (isLoading) {
 		return <div className="min-h-screen flex items-center justify-center">로딩 중...</div>;
 	}
 
 	if (error) {
-		return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+		return <div className="min-h-screen flex items-center justify-center text-red-500">{error.message}</div>;
 	}
 
 	return (

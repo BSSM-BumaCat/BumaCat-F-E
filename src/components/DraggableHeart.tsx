@@ -27,6 +27,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 
 	// 드래그 상태 강제 정리 함수 (useCallback으로 메모이제이션)
 	const forceCleanupDragState = useCallback(() => {
+		console.log('Force cleanup drag state');
 		isDraggingRef.current = false;
 		setIsDragging(false);
 		onDragStateChange?.(false);
@@ -35,10 +36,17 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		canDropRef.current = true;
 		hasDraggedRef.current = false;
 		onHoverProduct?.(null, isLikeMode, true);
+		
+		// 모든 이벤트 리스너 제거
+		document.removeEventListener('mousemove', () => {});
+		document.removeEventListener('mouseup', () => {});
 	}, [onDragStateChange, onHoverProduct, isLikeMode]);
 
 	const handleMouseDown = (e: React.MouseEvent) => {
-		if (!heartRef.current) return;
+		if (!heartRef.current || isDraggingRef.current) return;
+
+		e.preventDefault();
+		e.stopPropagation();
 
 		const rect = heartRef.current.getBoundingClientRect();
 		offsetRef.current = {
@@ -56,18 +64,12 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		hasDraggedRef.current = false;
 		mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
 
+		isDraggingRef.current = true;
 		setIsDragging(true);
 		onDragStateChange?.(true);
 
-		// 드래그 시작 시 초기 위치를 하트의 원래 위치로 설정 (마우스 위치가 아닌)
-		const initialPos = {
-			x: 0, // 하트 원래 위치에서 시작
-			y: 0,
-		};
-		setDragPosition(initialPos);
-
-		// useRef로 드래그 상태 추적
-		const isDraggingRef = { current: true };
+		// 드래그 시작 시 초기 위치를 하트의 원래 위치로 설정
+		setDragPosition({ x: 0, y: 0 });
 
 		const mouseMoveHandler = (e: MouseEvent) => {
 			if (!isDraggingRef.current) return;
@@ -130,11 +132,16 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 
 		const mouseUpHandler = (e: MouseEvent) => {
 			console.log('MouseUp triggered');
+			
+			// 즉시 이벤트 리스너 제거하여 중복 실행 방지
+			document.removeEventListener('mousemove', mouseMoveHandler);
+			document.removeEventListener('mouseup', mouseUpHandler);
+			
+			if (!isDraggingRef.current) return;
+			
 			isDraggingRef.current = false;
 			setIsDragging(false);
 			onDragStateChange?.(false);
-			document.removeEventListener('mousemove', mouseMoveHandler);
-			document.removeEventListener('mouseup', mouseUpHandler);
 
 			// 현재 canDrop 상태를 ref에서 가져오기
 			const currentCanDrop = canDropRef.current;
@@ -190,15 +197,15 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				}
 			}
 
-			// 드래그 종료 시 모든 상태 강제 초기화
-			onHoverProduct?.(null, isLikeMode, true);
-			setDragPosition({ x: 0, y: 0 });
-			setCanDrop(true);
-			canDropRef.current = true;
-			
-			// 드래그 상태 확실히 해제
-			isDraggingRef.current = false;
-			hasDraggedRef.current = false;
+			// 드래그 종료 시 모든 상태 즉시 초기화
+			setTimeout(() => {
+				onHoverProduct?.(null, isLikeMode, true);
+				setDragPosition({ x: 0, y: 0 });
+				setCanDrop(true);
+				canDropRef.current = true;
+				isDraggingRef.current = false;
+				hasDraggedRef.current = false;
+			}, 0);
 		};
 
 		document.addEventListener('mousemove', mouseMoveHandler);
@@ -207,15 +214,20 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		e.preventDefault();
 	};
 
-	// Pointer Events API 사용 - 터치와 마우스 통합 처리
+	// Pointer Events API 사용 - 터치 전용 처리 (마우스는 별도 처리)
 	useEffect(() => {
 		const heart = heartRef.current;
 		if (!heart) return;
 
 		const handlePointerDown = (e: PointerEvent) => {
+			// 마우스 이벤트는 handleMouseDown에서 처리하므로 무시
+			if (e.pointerType === 'mouse') return;
+			
 			console.log('Pointer down detected:', e.pointerType);
 			
-			// 터치 또는 마우스 모두 처리
+			// 이미 드래그 중이면 무시
+			if (isDraggingRef.current) return;
+			
 			e.preventDefault();
 			e.stopPropagation();
 
@@ -250,7 +262,8 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		};
 
 		const handlePointerMove = (e: PointerEvent) => {
-			if (!isDraggingRef.current) return;
+			// 마우스 이벤트는 무시
+			if (e.pointerType === 'mouse' || !isDraggingRef.current) return;
 			
 			console.log('Pointer move - dragging');
 			e.preventDefault();
@@ -294,7 +307,8 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		};
 
 		const handlePointerUp = (e: PointerEvent) => {
-			if (!isDraggingRef.current) return;
+			// 마우스 이벤트는 무시
+			if (e.pointerType === 'mouse' || !isDraggingRef.current) return;
 
 			console.log('Pointer up - finishing drag');
 			e.preventDefault();
@@ -354,15 +368,15 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 				}
 			}
 
-			// 드래그 종료 시 모든 상태 강제 초기화
-			onHoverProduct?.(null, isLikeMode, true);
-			setDragPosition({ x: 0, y: 0 });
-			setCanDrop(true);
-			canDropRef.current = true;
-			
-			// 드래그 상태 확실히 해제
-			isDraggingRef.current = false;
-			hasDraggedRef.current = false;
+			// 드래그 종료 시 모든 상태 즉시 초기화
+			setTimeout(() => {
+				onHoverProduct?.(null, isLikeMode, true);
+				setDragPosition({ x: 0, y: 0 });
+				setCanDrop(true);
+				canDropRef.current = true;
+				isDraggingRef.current = false;
+				hasDraggedRef.current = false;
+			}, 0);
 
 			// Pointer capture 해제
 			heart.releasePointerCapture(e.pointerId);
@@ -406,13 +420,32 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			}
 		};
 
+		// 빠른 동작 감지를 위한 추가 이벤트
+		const handleContextMenu = (e: Event) => {
+			if (isDraggingRef.current) {
+				e.preventDefault();
+				forceCleanupDragState();
+			}
+		};
+
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// ESC 키로 드래그 취소
+			if (e.key === 'Escape' && isDraggingRef.current) {
+				forceCleanupDragState();
+			}
+		};
+
 		window.addEventListener('blur', handleWindowBlur);
 		window.addEventListener('focus', handleWindowFocus);
+		window.addEventListener('contextmenu', handleContextMenu);
+		window.addEventListener('keydown', handleKeyDown);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 
 		return () => {
 			window.removeEventListener('blur', handleWindowBlur);
 			window.removeEventListener('focus', handleWindowFocus);
+			window.removeEventListener('contextmenu', handleContextMenu);
+			window.removeEventListener('keydown', handleKeyDown);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		};
 	}, [forceCleanupDragState]);

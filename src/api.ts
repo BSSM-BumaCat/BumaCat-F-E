@@ -1,7 +1,7 @@
 import type { Product } from "./Root";
 
 const API_BASE = "https://localhost:8080"; // 서버 API 엔드포인트
-const USE_SERVER = import.meta.env.VITE_SERVER === '1';
+const USE_SERVER = import.meta.env['VITE_SERVER'] === '1';
 
 // 목데이터
 const MOCK_PRODUCTS: Product[] = [

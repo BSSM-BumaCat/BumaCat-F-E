@@ -257,7 +257,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 									product={product}
 									onLikeToggle={onLikeToggle}
 									isHovered={product.isHovered}
-									keyPressed={keyPressed}
+									keyPressed={keyPressed || null}
 									layoutConfig={layoutConfig}
 									isShaking={product.isShaking}
 								/>

@@ -276,11 +276,10 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 								e.stopPropagation();
 								e.preventDefault();
 								// 일반 클릭 완전히 비활성화
-								return false;
 							}
 						}}>
 						{/* 하트 아이콘 */}
-						<FavoriteIcon isLiked={product.isLiked} />
+						<FavoriteIcon isLiked={product.isLiked ?? false} />
 						<span className="text-xs font-medium text-black leading-none">
 							{(product.favorites || 0) > 1000000
 								? `${Math.floor((product.favorites || 0) / 100000000)}억+명이 탐내요`
