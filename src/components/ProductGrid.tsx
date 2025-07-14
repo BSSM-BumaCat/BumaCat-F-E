@@ -311,6 +311,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 										style={{
 											gridColumn,
 											gridRow,
+											justifySelf: isFourthColumn ? 'end' : undefined,
 										}}
 									>
 										<ProductCard
