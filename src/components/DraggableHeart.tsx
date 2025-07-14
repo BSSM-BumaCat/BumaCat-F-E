@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface DraggableHeartProps {
 	onHeartDrop: (productId: number, isLike: boolean) => void;
@@ -25,8 +25,8 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 	const errorTimeoutRef = useRef<number | null>(null);
 	const isDraggingRef = useRef(false);
 
-	// 드래그 상태 강제 정리 함수
-	const forceCleanupDragState = () => {
+	// 드래그 상태 강제 정리 함수 (useCallback으로 메모이제이션)
+	const forceCleanupDragState = useCallback(() => {
 		isDraggingRef.current = false;
 		setIsDragging(false);
 		onDragStateChange?.(false);
@@ -35,7 +35,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 		canDropRef.current = true;
 		hasDraggedRef.current = false;
 		onHoverProduct?.(null, isLikeMode, true);
-	};
+	}, [onDragStateChange, onHoverProduct, isLikeMode]);
 
 	const handleMouseDown = (e: React.MouseEvent) => {
 		if (!heartRef.current) return;
@@ -415,7 +415,7 @@ export default function DraggableHeart({ onHeartDrop, products, onHoverProduct, 
 			window.removeEventListener('focus', handleWindowFocus);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		};
-	}, []);
+	}, [forceCleanupDragState]);
 
 
 
