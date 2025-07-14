@@ -18,6 +18,7 @@ function App() {
 	const [isDragging, setIsDragging] = useState(false);
 	const [keyPressed, setKeyPressed] = useState<string | null>(null);
 	const [shakingProduct, setShakingProduct] = useState<number | null>(null);
+	const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
 	const shakeTimeoutRef = useRef<number | null>(null);
 	const lastScrollTop = useRef(0);
 	const productGridRef = useRef<ProductGridRef>(null);
@@ -74,6 +75,10 @@ function App() {
 		} else {
 			setHoveredProduct({ id: productId, isLikeMode, canDrop });
 		}
+	};
+
+	const handleProductExpand = (productId: number) => {
+		setExpandedProduct(expandedProduct === productId ? null : productId);
 	};
 
 	const handleProductShake = (productId: number) => {
@@ -234,6 +239,8 @@ function App() {
 					isDragging={isDragging}
 					keyPressed={keyPressed}
 					shakingProduct={shakingProduct}
+					expandedProduct={expandedProduct}
+					onProductExpand={handleProductExpand}
 				/>
 			</div>
 

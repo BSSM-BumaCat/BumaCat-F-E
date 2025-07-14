@@ -20,9 +20,11 @@ interface ProductCardProps {
 		searchBarTop?: string;
 	};
 	isShaking?: boolean;
+	isExpanded?: boolean;
+	onExpand?: () => void;
 }
 
-const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking, isExpanded, onExpand }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -76,11 +78,17 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 				triggerShake();
 			}
 		}
+		// 일반 클릭 시 확대/축소 토글
+		else {
+			onExpand?.();
+		}
 	};
 
 	return (
 		<div
-			className="relative cursor-pointer group"
+			className={`relative cursor-pointer group transition-all duration-500 ease-in-out ${
+				isExpanded ? 'z-50' : 'hover:shadow-lg'
+			}`}
 			data-product-id={product.id}
 			onClick={handleClick}
 			style={{
@@ -149,19 +157,22 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 					</div>
 				</div>
 			)}
+			
 			<div className="w-full h-full bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${product.imageUrl})` }}>
-				{/* 기본 그라데이션 오버레이 */}
-				<div
-					className={`absolute inset-0 bg-gradient-to-t from-black black black via-black/30 transparent transparent to-transparent group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
-						isHovered ? 'opacity-0' : ''
-					}`}
-				/>
+				{/* 기본 그라데이션 오버레이 - 확대 상태에서는 숨김 */}
+				{!isExpanded && (
+					<div
+						className={`absolute inset-0 bg-gradient-to-t from-black black black via-black/30 transparent transparent to-transparent group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
+							isHovered ? 'opacity-0' : ''
+						}`}
+					/>
+				)}
 
-				{/* 드래그 호버 시 또는 흔들기 시 어두운 오버레이 */}
-				{(isHovered || isShaking) && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />}
+				{/* 드래그 호버 시 또는 흔들기 시 어두운 오버레이 - 확대 상태에서는 숨김 */}
+				{!isExpanded && (isHovered || isShaking) && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />}
 
-				{/* 드래그 호버 시 또는 흔들기 시 중앙 하트 미리보기 */}
-				{(isHovered || isShaking) && (
+				{/* 드래그 호버 시 또는 흔들기 시 중앙 하트 미리보기 - 확대 상태에서는 숨김 */}
+				{!isExpanded && (isHovered || isShaking) && (
 					<div className="absolute inset-0 flex items-center justify-center">
 						<div
 							key={`heart-${product.id}-${animationKey}`}
@@ -254,14 +265,17 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 					</div>
 				)}
 
-				{/* 제품 정보 */}
-				<div
-					className={`absolute bottom-0 left-0 right-0 p-3.5 pb-3 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
-						isHovered || likeEffect || isShaking ? 'opacity-0' : ''
-					}`}>
+				{/* 제품 정보 - 확대 상태에서는 숨김 */}
+				{!isExpanded && (
+					<div
+						className={`absolute bottom-0 left-0 right-0 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
+							isHovered || likeEffect || isShaking ? 'opacity-0' : ''
+						} p-3.5 pb-3`}>
 					{/* 탐내요 버튼 */}
 					<button
-						className="flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none"
+						className={`flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none ${
+							isExpanded ? 'scale-125' : ''
+						}`}
 						style={{
 							userSelect: 'none',
 							WebkitUserSelect: 'none',
@@ -288,11 +302,23 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 					</button>
 
 					{/* 제품명 */}
-					<div className="text-white text-sm line-clamp-1">{product.name}</div>
+					<div className={`text-white ${isExpanded ? 'text-lg line-clamp-2' : 'text-sm line-clamp-1'}`}>
+						{product.name}
+					</div>
+
+					{/* 확대된 상태에서만 제품 설명 표시 */}
+					{isExpanded && (
+						<div className="text-white/80 text-sm mt-1 line-clamp-2">
+							{product.description}
+						</div>
+					)}
 
 					{/* 가격 */}
-					<div className="text-white text-base font-semibold">{product.price.toLocaleString()}원</div>
-				</div>
+					<div className={`text-white font-semibold ${isExpanded ? 'text-xl mt-1' : 'text-base'}`}>
+						{product.price.toLocaleString()}원
+					</div>
+					</div>
+				)}
 			</div>
 
 			{/* 인스타그램 스타일 하트 이펙트 CSS */}

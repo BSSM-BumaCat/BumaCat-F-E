@@ -25,6 +25,8 @@ interface ProductGridProps {
 	isDragging?: boolean;
 	keyPressed?: string | null;
 	shakingProduct?: number | null;
+	expandedProduct?: number | null;
+	onProductExpand?: (productId: number) => void;
 }
 
 export interface ProductGridRef {
@@ -32,9 +34,20 @@ export interface ProductGridRef {
 }
 
 const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
-	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed, shakingProduct }, ref) => {
+	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed, shakingProduct, expandedProduct, onProductExpand }, ref) => {
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
 		const scrollContainerRef = useRef<HTMLDivElement>(null);
+		
+		// Calculate expanded card size with gap consideration
+		const getExpandedCardSize = useCallback((baseSize: string) => {
+			const baseSizeValue = parseFloat(baseSize);
+			// For 2x2 expansion: 
+			// - Need 2x the base size
+			// - Plus 1x gap (the gap between the 2x2 cells)
+			// - Grid gap is 1rem (gap-4 in Tailwind CSS)
+			// Final size: (baseSize * 2) + 1rem gap
+			return `calc(${baseSizeValue * 2}rem + 1rem)`;
+		}, []);
 		
 		// Custom hooks로 복잡한 로직 캡슐화
 		const { layoutConfig, isTouch, isMobile } = useDeviceLayout();
@@ -164,10 +177,12 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 		// 디바이스 레이아웃은 useDeviceLayout 훅에서 자동 관리됨
 		
 		// 스타일 계산 메모이제이션으로 성능 최적화
-		const gridStyles = useMemo(() => 
-			calculateGridStyles(layoutConfig, searchTerm, isTouch), 
-			[layoutConfig, searchTerm, isTouch]
-		);
+		const gridStyles = useMemo(() => {
+			const baseStyles = calculateGridStyles(layoutConfig, searchTerm, isTouch);
+			
+			// 확대된 상품이 있을 때도 기본 그리드 유지 (4열)
+			return baseStyles;
+		}, [layoutConfig, searchTerm, isTouch]);
 		
 		const containerStyles = useMemo(() => 
 			calculateContainerStyles(layoutConfig), 
@@ -189,9 +204,10 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 			products?.map((product) => ({
 				...product,
 				isHovered: hoveredProduct?.id === product.id,
-				isShaking: shakingProduct === product.id
+				isShaking: shakingProduct === product.id,
+				isExpanded: expandedProduct === product.id
 			})) || [], 
-			[products, hoveredProduct?.id, shakingProduct]
+			[products, hoveredProduct?.id, shakingProduct, expandedProduct]
 		);
 
 		return (
@@ -252,15 +268,29 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 							className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out"
 							style={gridStyles}>
 							{memoizedProducts.map((product) => (
-								<ProductCard
-									key={product.id}
-									product={product}
-									onLikeToggle={onLikeToggle}
-									isHovered={product.isHovered}
-									keyPressed={keyPressed || null}
-									layoutConfig={layoutConfig}
-									isShaking={product.isShaking}
-								/>
+								<div 
+									className={`${product.isExpanded ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'} transition-all duration-500 ease-in-out`}
+									style={{
+										gridColumn: product.isExpanded ? 'span 2' : 'span 1',
+										gridRow: product.isExpanded ? 'span 2' : 'span 1',
+									}}
+								>
+									<ProductCard
+										key={product.id}
+										product={product}
+										onLikeToggle={onLikeToggle}
+										isHovered={product.isHovered}
+										keyPressed={keyPressed || null}
+										layoutConfig={product.isExpanded ? {
+											...layoutConfig,
+											cardWidth: getExpandedCardSize(layoutConfig.cardWidth),
+											cardHeight: getExpandedCardSize(layoutConfig.cardHeight),
+										} : layoutConfig}
+										isShaking={product.isShaking}
+										isExpanded={product.isExpanded}
+										onExpand={() => onProductExpand?.(product.id)}
+									/>
+								</div>
 							))}
 						</div>
 
