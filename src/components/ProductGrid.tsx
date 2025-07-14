@@ -46,7 +46,7 @@ const getLayoutConfig = () => {
 			cardWidth: `calc((100vw - 2rem - 1rem) / 2)`,
 			cardHeight: `calc(((100vw - 2rem - 1rem) / 2) * 1.252)`,
 			containerWidth: `calc(100vw - 2rem)`,
-			containerHeight: `100vh`,
+			containerHeight: `calc(100vh - 2rem)`, // 하단 여백 확보
 			maxCardWidth: '12.5rem',
 			maxCardHeight: '15.65rem',
 			searchBarTop: 'top-16',
@@ -341,9 +341,17 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						}`}>
 						{/* 메인 제품 그리드 - 모든 상품 렌더링 */}
 						<div
-							className="grid gap-4 w-fit relative z-20"
+							className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out"
 							style={{
 								gridTemplateColumns: `repeat(${layoutConfig.cols}, minmax(0, 1fr))`,
+								// 터치 디바이스에서 검색 결과가 있을 때만 검색바 아래 여백 추가
+								marginTop: layoutConfig.cols <= 4 && 'ontouchstart' in window && searchTerm ? 
+									(layoutConfig.searchBarTop === 'top-16' ? '4.5rem' : // 모바일
+									 layoutConfig.searchBarTop === 'top-34' ? '5.5rem' : // 아이패드 에어
+									 layoutConfig.searchBarTop === 'top-38' ? '6.5rem' : // 아이패드 프로
+									 '4.5rem') : '0',
+								// 모바일에서 하단 여백 추가
+								paddingBottom: layoutConfig.cols === 2 && 'ontouchstart' in window ? '3rem' : '1rem'
 							}}>
 							{products &&
 								products.map((product) => (
