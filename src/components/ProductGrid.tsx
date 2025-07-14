@@ -1,90 +1,14 @@
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import type { Product } from '../Root';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+// Product type는 ProductWithFavorites로 대체됨
 import ProductCard from './ProductCard';
 import SearchBar from './SearchBar';
+import { useDeviceLayout } from '../hooks/useDeviceLayout';
+import { useScrollAnimation } from '../hooks/useScrollAnimation';
+import { useSearchBehavior } from '../hooks/useSearchBehavior';
+import { calculateGridStyles, calculateCardStyles, calculateContainerStyles, calculateSearchBarClasses } from '../utils/layoutCalculator';
+import type { ProductWithFavorites } from '../types/product.types';
 
-// 디바이스별 레이아웃 계산 함수
-const getLayoutConfig = () => {
-	const width = window.innerWidth;
-	const height = window.innerHeight;
-	const isTouch = 'ontouchstart' in window;
-
-	console.log('Device info:', { width, height, isTouch, userAgent: navigator.userAgent });
-
-	// 아이패드 프로 감지 (화면 크기와 터치 지원)
-	if (isTouch && width >= 1024 && height >= 1366) {
-		console.log('Detected: iPad Pro - 4 cols, 5 rows');
-		return {
-			cols: 4,
-			rows: 5,
-			cardWidth: '11rem',
-			cardHeight: '13.75rem',
-			containerWidth: 'calc(4 * 11rem + 3 * 1rem)',
-			containerHeight: 'calc(5 * 13.75rem + 4 * 1rem)',
-			searchBarTop: 'top-38',
-		};
-	}
-	// 아이패드 일반/에어 감지
-	else if (isTouch && width >= 768 && width <= 1024) {
-		console.log('Detected: iPad Air/Regular - 4 cols, 5 rows');
-		return {
-			cols: 4,
-			rows: 5,
-			cardWidth: '9.5rem',
-			cardHeight: '11.875rem',
-			containerWidth: 'calc(4 * 9.5rem + 3 * 1rem)',
-			containerHeight: 'calc(5 * 11.875rem + 4 * 1rem)',
-			searchBarTop: 'top-34',
-		};
-	}
-	// 모바일 (터치 지원 + 작은 화면)
-	else if (isTouch && width <= 767) {
-		console.log('Detected: Mobile - 2 cols, full height, no padding');
-		return {
-			cols: 2,
-			rows: 'auto',
-			cardWidth: `calc((100vw - 2rem - 1rem) / 2)`,
-			cardHeight: `calc(((100vw - 2rem - 1rem) / 2) * 1.252)`,
-			containerWidth: `calc(100vw - 2rem)`,
-			containerHeight: `calc(100vh - 2rem)`, // 하단 여백 확보
-			maxCardWidth: '12.5rem',
-			maxCardHeight: '15.65rem',
-			searchBarTop: 'top-16',
-			searchBarCompact: true,
-		};
-	}
-	// 태블릿 크기 데스크톱
-	else if (width <= 1024) {
-		console.log('Detected: Tablet size desktop - 4 cols, 4 rows');
-		return {
-			cols: 4,
-			rows: 4,
-			cardWidth: '10.5rem',
-			cardHeight: '13.125rem',
-			containerWidth: 'calc(4 * 10.5rem + 3 * 1rem)',
-			containerHeight: 'calc(4 * 13.125rem + 3 * 1rem)',
-			searchBarTop: 'top-34',
-		};
-	}
-	// 큰 화면 데스크톱
-	else {
-		console.log('Detected: Desktop - 4 cols, 3 rows');
-		return {
-			cols: 4,
-			rows: 3,
-			cardWidth: '12.5rem',
-			cardHeight: '15.65rem',
-			containerWidth: 'calc(4 * 12.5rem + 3 * 1rem)',
-			containerHeight: 'calc(3 * 15.65rem + 2 * 1rem)',
-			searchBarTop: 'top-34',
-		};
-	}
-};
-
-type ProductWithFavorites = Product & {
-	favorites?: number;
-	isLiked?: boolean;
-};
+// 기존 하드코딩된 로직은 custom hooks로 대체됨
 
 interface ProductGridProps {
 	products: ProductWithFavorites[];
@@ -109,14 +33,26 @@ export interface ProductGridRef {
 
 const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed, shakingProduct }, ref) => {
-		const [isSearchVisible, setIsSearchVisible] = useState(false);
-		const [scrollTop, setScrollTop] = useState(0);
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
-		const [layoutConfig, setLayoutConfig] = useState(getLayoutConfig);
-		const [isSearchBarVisible, setIsSearchBarVisible] = useState(true);
-		const [lastScrollTop, setLastScrollTop] = useState(0);
 		const scrollContainerRef = useRef<HTMLDivElement>(null);
-		const hideTimeoutRef = useRef<number | null>(null);
+		
+		// Custom hooks로 복잡한 로직 캡슐화
+		const { layoutConfig, isTouch, isMobile } = useDeviceLayout();
+		const {
+			isVisible: isSearchBarVisible,
+			scrollTop,
+			handleScroll: handleScrollAnimation
+		} = useScrollAnimation({
+			threshold: 10,
+			showDirection: 'up',
+			hideDirection: 'down',
+			enabled: isTouch && layoutConfig.cols <= 4
+		});
+		const {
+			isSearchVisible,
+			handleMouseEnter,
+			handleMouseLeave
+		} = useSearchBehavior({ hideDelay: 1000 });
 
 		// 외부에서 스크롤 제어할 수 있는 함수 노출
 		useImperativeHandle(ref, () => ({
@@ -125,55 +61,16 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 					const container = scrollContainerRef.current;
 					const newScrollTop = Math.max(0, Math.min(container.scrollTop + deltaY, container.scrollHeight - container.clientHeight));
 					container.scrollTop = newScrollTop;
-					setScrollTop(newScrollTop);
+					// setScrollTop은 useScrollAnimation hook에서 관리됨
 				}
 			},
 		}));
 
-		const handleMouseEnter = () => {
-			// 기존 타이머가 있으면 취소
-			if (hideTimeoutRef.current) {
-				clearTimeout(hideTimeoutRef.current);
-				hideTimeoutRef.current = null;
-			}
-			setIsSearchVisible(true);
-		};
-
-		const handleMouseLeave = () => {
-			// 1초 후에 검색바 숨기기
-			hideTimeoutRef.current = window.setTimeout(() => {
-				setIsSearchVisible(false);
-			}, 1000);
-		};
-
-		// 스크롤 이벤트 핸들러 - 즉시 반영 및 검색바 제어
-		const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-			const target = e.target as HTMLDivElement;
-			const currentScrollTop = target.scrollTop;
-			setScrollTop(currentScrollTop);
-
-			// 터치 디바이스에서만 스크롤 방향에 따른 검색바 제어
-			if ('ontouchstart' in window && layoutConfig.cols <= 4) {
-				const scrollDifference = currentScrollTop - lastScrollTop;
-				const scrollThreshold = 10; // 최소 스크롤 거리
-
-				if (Math.abs(scrollDifference) > scrollThreshold) {
-					if (scrollDifference > 0) {
-						// 아래로 스크롤: 검색바 숨기기
-						setIsSearchBarVisible(false);
-					} else {
-						// 위로 스크롤: 검색바 보이기
-						setIsSearchBarVisible(true);
-					}
-					setLastScrollTop(currentScrollTop);
-				}
-
-				// 맨 위에 있을 때는 항상 검색바 보이기
-				if (currentScrollTop <= 50) {
-					setIsSearchBarVisible(true);
-				}
-			}
-		};
+		// 통합된 스크롤 핸들러 (useCallback으로 메모이제이션)
+		const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+			// 스크롤 애니메이션 훅의 핸들러 호출
+			handleScrollAnimation(e);
+		}, [handleScrollAnimation]);
 
 		// 렌더링 안정화 및 레이아웃 준비 상태 관리
 		useEffect(() => {
@@ -193,7 +90,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 					if (hasCorrectSize) {
 						setIsLayoutReady(true);
 						// 레이아웃 준비 후 스크롤 위치 동기화
-						setScrollTop(container.scrollTop);
+						// scrollTop은 useScrollAnimation hook에서 자동 관리됨
 					}
 				}
 			};
@@ -227,7 +124,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 
 			const syncScrollPosition = () => {
 				if (scrollContainerRef.current) {
-					setScrollTop(scrollContainerRef.current.scrollTop);
+					// scrollTop은 useScrollAnimation hook에서 자동 관리됨
 				}
 			};
 
@@ -249,7 +146,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 				if (!document.hidden && isLayoutReady && scrollContainerRef.current) {
 					requestAnimationFrame(() => {
 						if (scrollContainerRef.current) {
-							setScrollTop(scrollContainerRef.current.scrollTop);
+							// scrollTop은 useScrollAnimation hook에서 자동 관리됨
 						}
 					});
 				}
@@ -264,15 +161,38 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 			};
 		}, [isLayoutReady]);
 
-		// 윈도우 리사이즈 시 레이아웃 재계산
-		useEffect(() => {
-			const handleResize = () => {
-				setLayoutConfig(getLayoutConfig());
-			};
-
-			window.addEventListener('resize', handleResize);
-			return () => window.removeEventListener('resize', handleResize);
-		}, []);
+		// 디바이스 레이아웃은 useDeviceLayout 훅에서 자동 관리됨
+		
+		// 스타일 계산 메모이제이션으로 성능 최적화
+		const gridStyles = useMemo(() => 
+			calculateGridStyles(layoutConfig, searchTerm, isTouch), 
+			[layoutConfig, searchTerm, isTouch]
+		);
+		
+		const containerStyles = useMemo(() => 
+			calculateContainerStyles(layoutConfig), 
+			[layoutConfig]
+		);
+		
+		const cardStyles = useMemo(() => 
+			calculateCardStyles(layoutConfig), 
+			[layoutConfig]
+		);
+		
+		const searchBarClasses = useMemo(() => 
+			calculateSearchBarClasses(layoutConfig, isSearchBarVisible, isTouch), 
+			[layoutConfig, isSearchBarVisible, isTouch]
+		);
+		
+		// ProductCard props 메모이제이션
+		const memoizedProducts = useMemo(() => 
+			products?.map((product) => ({
+				...product,
+				isHovered: hoveredProduct?.id === product.id,
+				isShaking: shakingProduct === product.id
+			})) || [], 
+			[products, hoveredProduct?.id, shakingProduct]
+		);
 
 		return (
 			<div className="relative product-grid-container max-w-fit mx-auto">
@@ -283,8 +203,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						style={{
 							left: 0,
 							top: 0,
-							width: layoutConfig.containerWidth,
-							height: layoutConfig.containerHeight,
+							...containerStyles,
 							overflow: 'visible',
 						}}>
 						<div
@@ -301,12 +220,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 									<div
 										key={`blur-${product.id}`}
 										className="relative overflow-visible"
-										style={{
-											width: layoutConfig.cardWidth,
-											height: layoutConfig.cardHeight,
-											maxWidth: layoutConfig.maxCardWidth,
-											maxHeight: layoutConfig.maxCardHeight,
-										}}>
+										style={cardStyles}>
 										{/* 원본 이미지 블러 처리 */}
 										<div
 											className="absolute -inset-1 bg-cover bg-center filter blur-xl opacity-15"
@@ -325,13 +239,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 				{/* 스크롤 가능한 뷰포트 */}
 				<div
 					className="overflow-y-auto overflow-x-hidden scrollbar-hide relative z-10 viewport-container"
-					style={{
-						width: layoutConfig.containerWidth,
-						height: layoutConfig.containerHeight,
-						maxWidth: layoutConfig.maxCardWidth
-							? `calc(${layoutConfig.cols} * ${layoutConfig.maxCardWidth} + ${layoutConfig.cols - 1} * 1rem)`
-							: undefined,
-					}}
+					style={containerStyles}
 					ref={scrollContainerRef}
 					onScroll={handleScroll}>
 					{/* 제품 그리드 */}
@@ -342,29 +250,18 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						{/* 메인 제품 그리드 - 모든 상품 렌더링 */}
 						<div
 							className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out"
-							style={{
-								gridTemplateColumns: `repeat(${layoutConfig.cols}, minmax(0, 1fr))`,
-								// 터치 디바이스에서 검색 결과가 있을 때만 검색바 아래 여백 추가
-								marginTop: layoutConfig.cols <= 4 && 'ontouchstart' in window && searchTerm ? 
-									(layoutConfig.searchBarTop === 'top-16' ? '4.5rem' : // 모바일
-									 layoutConfig.searchBarTop === 'top-34' ? '5.5rem' : // 아이패드 에어
-									 layoutConfig.searchBarTop === 'top-38' ? '6.5rem' : // 아이패드 프로
-									 '4.5rem') : '0',
-								// 모바일에서 하단 여백 추가
-								paddingBottom: layoutConfig.cols === 2 && 'ontouchstart' in window ? '3rem' : '1rem'
-							}}>
-							{products &&
-								products.map((product) => (
-									<ProductCard
-										key={product.id}
-										product={product}
-										onLikeToggle={onLikeToggle}
-										isHovered={hoveredProduct?.id === product.id}
-										keyPressed={keyPressed}
-										layoutConfig={layoutConfig}
-										isShaking={shakingProduct === product.id}
-									/>
-								))}
+							style={gridStyles}>
+							{memoizedProducts.map((product) => (
+								<ProductCard
+									key={product.id}
+									product={product}
+									onLikeToggle={onLikeToggle}
+									isHovered={product.isHovered}
+									keyPressed={keyPressed}
+									layoutConfig={layoutConfig}
+									isShaking={product.isShaking}
+								/>
+							))}
 						</div>
 
 						{/* 검색바 영역 */}
@@ -372,18 +269,13 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 						{!isDragging && !keyPressed && (
 							<div>
 								{/* 터치 디바이스에서는 스크롤 방향에 따라 표시/숨김 */}
-								{layoutConfig.cols <= 4 && 'ontouchstart' in window ? (
-									<div
-										className={`fixed ${
-											layoutConfig.searchBarTop || 'top-4'
-										} left-1/2 transform -translate-x-1/2 z-50 w-fit transition-all duration-500 ease-in-out ${
-											isSearchBarVisible ? 'translate-y-0 opacity-100' : '-translate-y-5 opacity-0'
-										}`}>
+								{isTouch && layoutConfig.cols <= 4 ? (
+									<div className={searchBarClasses}>
 										<SearchBar
 											searchTerm={searchTerm}
 											onSearch={onSearch}
 											totalDonations={totalDonations}
-											compact={layoutConfig.searchBarCompact}
+											compact={isMobile}
 										/>
 									</div>
 								) : (
@@ -400,7 +292,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 												searchTerm={searchTerm}
 												onSearch={onSearch}
 												totalDonations={totalDonations}
-												compact={layoutConfig.searchBarCompact}
+												compact={isMobile}
 											/>
 										</div>
 									</div>

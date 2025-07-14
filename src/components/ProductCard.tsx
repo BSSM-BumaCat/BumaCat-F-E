@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import type { Product } from '../Root';
 import FavoriteIcon from './FavoriteIcon';
 
@@ -22,7 +22,7 @@ interface ProductCardProps {
 	isShaking?: boolean;
 }
 
-export default function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -412,4 +412,6 @@ export default function ProductCard({ product, onLikeToggle, isHovered, keyPress
 			)}
 		</div>
 	);
-}
+});
+
+export default ProductCard;

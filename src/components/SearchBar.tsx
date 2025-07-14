@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 interface SearchBarProps {
 	searchTerm: string;
 	onSearch: (term: string) => void;
@@ -5,7 +7,7 @@ interface SearchBarProps {
 	compact?: boolean;
 }
 
-export default function SearchBar({ searchTerm, onSearch, totalDonations, compact }: SearchBarProps) {
+const SearchBar = memo(function SearchBar({ searchTerm, onSearch, totalDonations, compact }: SearchBarProps) {
 	return (
 		<div className={compact ? 'mb-2 flex justify-center' : 'mb-8 flex justify-center'}>
 			<div
@@ -39,4 +41,6 @@ export default function SearchBar({ searchTerm, onSearch, totalDonations, compac
 			</div>
 		</div>
 	);
-}
+});
+
+export default SearchBar;
