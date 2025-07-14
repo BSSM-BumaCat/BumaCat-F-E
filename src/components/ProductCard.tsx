@@ -25,7 +25,17 @@ interface ProductCardProps {
 	isFourthColumn?: boolean;
 }
 
-const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered, keyPressed, layoutConfig, isShaking, isExpanded, onExpand, isFourthColumn }: ProductCardProps) {
+const ProductCard = memo(function ProductCard({
+	product,
+	onLikeToggle,
+	isHovered,
+	keyPressed,
+	layoutConfig,
+	isShaking,
+	isExpanded,
+	onExpand,
+	isFourthColumn,
+}: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
 
@@ -87,9 +97,7 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 
 	return (
 		<div
-			className={`relative cursor-pointer group transition-all duration-500 ease-in-out ${
-				isExpanded ? 'z-50' : 'hover:shadow-lg'
-			} ${isFourthColumn ? 'fourth-column-animation' : ''}`}
+			className={`relative cursor-pointer group transition-all duration-500 ease-in-out`}
 			data-product-id={product.id}
 			onClick={handleClick}
 			style={{
@@ -98,7 +106,7 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 				maxWidth: layoutConfig?.maxCardWidth,
 				maxHeight: layoutConfig?.maxCardHeight,
 				transformOrigin: isFourthColumn ? 'top right' : 'top left',
-				transform: isExpanded ? 'scale(2.08)' : 'scale(1)', // 2x + gap 계산: (2 * 12.5 + 16) / 12.5 = 2.08
+				transform: isExpanded ? 'scale(2.07)' : 'scale(1)', // 2x + gap 계산: (2 * 12.5 + 16) / 12.5 = 2.08
 			}}>
 			{/* 키보드 단축키 가이드 - 모든 상품에 오버레이 */}
 			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
@@ -160,7 +168,7 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 					</div>
 				</div>
 			)}
-			
+
 			<div className="w-full h-full bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${product.imageUrl})` }}>
 				{/* 기본 그라데이션 오버레이 - 확대 상태에서는 숨김 */}
 				{!isExpanded && (
@@ -172,7 +180,9 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 				)}
 
 				{/* 드래그 호버 시 또는 흔들기 시 어두운 오버레이 - 확대 상태에서는 숨김 */}
-				{!isExpanded && (isHovered || isShaking) && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />}
+				{!isExpanded && (isHovered || isShaking) && (
+					<div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out" />
+				)}
 
 				{/* 드래그 호버 시 또는 흔들기 시 중앙 하트 미리보기 - 확대 상태에서는 숨김 */}
 				{!isExpanded && (isHovered || isShaking) && (
@@ -274,52 +284,46 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 						className={`absolute bottom-0 left-0 right-0 flex flex-col group-hover:opacity-0 transition-opacity duration-300 ease-in-out ${
 							isHovered || likeEffect || isShaking ? 'opacity-0' : ''
 						} p-3.5 pb-3`}>
-					{/* 탐내요 버튼 */}
-					<button
-						className={`flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none ${
-							isExpanded ? 'scale-125' : ''
-						}`}
-						style={{
-							userSelect: 'none',
-							WebkitUserSelect: 'none',
-							msUserSelect: 'none',
-						}}
-						onClick={(e) => {
-							// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
-							if (keyPressed === '+' || keyPressed === '-') {
-								// 키보드 단축키 로직 실행
-								handleClick(e as React.MouseEvent);
-							} else {
-								e.stopPropagation();
-								e.preventDefault();
-								// 일반 클릭 완전히 비활성화
-							}
-						}}>
-						{/* 하트 아이콘 */}
-						<FavoriteIcon isLiked={product.isLiked ?? false} />
-						<span className="text-xs font-medium text-black leading-none">
-							{(product.favorites || 0) > 1000000
-								? `${Math.floor((product.favorites || 0) / 100000000)}억+명이 탐내요`
-								: `${product.favorites || 0}명이 탐내요`}
-						</span>
-					</button>
+						{/* 탐내요 버튼 */}
+						<button
+							className={`flex items-center gap-1 transition-opacity w-fit py-[0.315rem] px-1.5 mb-1 bg-white rounded-full pointer-events-none select-none ${
+								isExpanded ? 'scale-125' : ''
+							}`}
+							style={{
+								userSelect: 'none',
+								WebkitUserSelect: 'none',
+								msUserSelect: 'none',
+							}}
+							onClick={(e) => {
+								// 키보드 단축키가 눌린 상태에서는 이벤트 전파 허용
+								if (keyPressed === '+' || keyPressed === '-') {
+									// 키보드 단축키 로직 실행
+									handleClick(e as React.MouseEvent);
+								} else {
+									e.stopPropagation();
+									e.preventDefault();
+									// 일반 클릭 완전히 비활성화
+								}
+							}}>
+							{/* 하트 아이콘 */}
+							<FavoriteIcon isLiked={product.isLiked ?? false} />
+							<span className="text-xs font-medium text-black leading-none">
+								{(product.favorites || 0) > 1000000
+									? `${Math.floor((product.favorites || 0) / 100000000)}억+명이 탐내요`
+									: `${product.favorites || 0}명이 탐내요`}
+							</span>
+						</button>
 
-					{/* 제품명 */}
-					<div className={`text-white ${isExpanded ? 'text-lg line-clamp-2' : 'text-sm line-clamp-1'}`}>
-						{product.name}
-					</div>
+						{/* 제품명 */}
+						<div className={`text-white ${isExpanded ? 'text-lg line-clamp-2' : 'text-sm line-clamp-1'}`}>{product.name}</div>
 
-					{/* 확대된 상태에서만 제품 설명 표시 */}
-					{isExpanded && (
-						<div className="text-white/80 text-sm mt-1 line-clamp-2">
-							{product.description}
+						{/* 확대된 상태에서만 제품 설명 표시 */}
+						{isExpanded && <div className="text-white/80 text-sm mt-1 line-clamp-2">{product.description}</div>}
+
+						{/* 가격 */}
+						<div className={`text-white font-semibold ${isExpanded ? 'text-xl mt-1' : 'text-base'}`}>
+							{product.price.toLocaleString()}원
 						</div>
-					)}
-
-					{/* 가격 */}
-					<div className={`text-white font-semibold ${isExpanded ? 'text-xl mt-1' : 'text-base'}`}>
-						{product.price.toLocaleString()}원
-					</div>
 					</div>
 				)}
 			</div>
@@ -435,20 +439,6 @@ const ProductCard = memo(function ProductCard({ product, onLikeToggle, isHovered
 						animation: none !important;
 						opacity: 1 !important;
 						transform: scale(1.1) translateX(0) !important;
-					}
-				`}</style>
-			)}
-
-			{/* 4번째 열 전용 Y축 대칭 애니메이션 CSS */}
-			{isFourthColumn && (
-				<style>{`
-					.fourth-column-animation {
-						transform-origin: top right !important;
-					}
-					
-					/* 4번째 열 확대/축소 시 Y축 대칭 애니메이션 */
-					.fourth-column-animation.transition-all {
-						transition: all 0.5s ease-in-out;
 					}
 				`}</style>
 			)}
