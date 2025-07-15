@@ -268,6 +268,47 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 
 								// 모바일과 데스크탑 구분하여 확대 로직 처리
 								const isMobileLayout = layoutConfig.cols === 2;
+
+								// 모바일 기종별 화면 크기에 따른 paddingBottom 동적 계산
+								const calculateMobilePaddingBottom = () => {
+									if (!isMobileLayout || !isExpanded) return '0';
+
+									// 현재 뷰포트 크기 가져오기
+									const viewportWidth = window.innerWidth;
+									const viewportHeight = window.innerHeight;
+
+									// 모바일 기종별 계산 로직
+									// 아이폰 SE, 미니 (320-375px)
+									if (viewportWidth <= 375) {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 0.75rem)`;
+									}
+									// 아이폰 프로, 표준 (376-414px)
+									else if (viewportWidth <= 414) {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 0.9rem)`;
+									}
+									// 아이폰 프로 맥스, 플러스 (415-480px)
+									else if (viewportWidth <= 480) {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 1rem)`;
+									}
+									// 작은 안드로이드 폰 (481-540px)
+									else if (viewportWidth <= 540) {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 1.25rem)`;
+									}
+									// 큰 안드로이드 폰 (541-600px)
+									else if (viewportWidth <= 600) {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 1.5rem)`;
+									}
+									// 매우 큰 안드로이드 폰 또는 폴더블 (601-767px)
+									else if (viewportWidth <= 767) {
+										// 높이를 고려한 추가 조정
+										const heightFactor = viewportHeight > 800 ? 1.75 : 1.5;
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + ${heightFactor}rem)`;
+									}
+									// 기본값 (예외 상황)
+									else {
+										return `calc(((100vw - 2rem - 1rem) / 2) * 1.252 + 1rem)`;
+									}
+								};
 								const lastColumnIndex = layoutConfig.cols - 1;
 								const isLastColumn = currentCol === lastColumnIndex;
 
@@ -328,11 +369,9 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											// 확대된 상품은 실제 높이를 늘려서 아래쪽 밀어내기
 											...(isMobileLayout &&
 												isExpanded && {
-													// 2x2 확대 시 정확한 크기 계산
-													// 카드 높이: 250.4px, gap: 16px
-													// 총 필요 높이: 2 * 250.4px + 16px = 516.8px
-													// 추가로 필요한 높이: 516.8px - 250.4px = 266.4px
-													paddingBottom: '14.35rem', // 정확한 추가 공간
+													// 2x2 확대 시 동적 크기 계산
+													// 실제 카드 높이와 gap을 기반으로 계산
+													paddingBottom: calculateMobilePaddingBottom(),
 												}),
 										}}>
 										<ProductCard
