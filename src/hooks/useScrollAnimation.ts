@@ -38,6 +38,7 @@ export const useScrollAnimation = (
   const [scrollTop, setScrollTop] = useState(0);
   
   const lastScrollTopRef = useRef(0);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (!enabled) return;
@@ -55,6 +56,12 @@ export const useScrollAnimation = (
       const newDirection: Direction = scrollDifference > 0 ? 'down' : 'up';
       setScrollDirection(newDirection);
 
+      // 스크롤 중일 때는 타이머 취소
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+
       // 표시/숨김 결정
       if (newDirection === hideDirection) {
         setIsVisible(false);
@@ -71,12 +78,37 @@ export const useScrollAnimation = (
     }
   }, [enabled, threshold, showDirection, hideDirection]);
 
+  // 맨 위에서 정지 상태 감지를 위한 별도 effect
+  useEffect(() => {
+    if (scrollTop <= threshold * 2) {
+      // 기존 타이머 취소
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+
+      // 3초 후 숨김
+      hideTimeoutRef.current = setTimeout(() => {
+        setIsVisible(false);
+      }, 3000);
+    }
+  }, [scrollTop, threshold]);
+
   // 초기 상태 설정
   useEffect(() => {
     if (!enabled) {
       setIsVisible(true);
     }
   }, [enabled]);
+
+  // cleanup
+  useEffect(() => {
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     isVisible,
