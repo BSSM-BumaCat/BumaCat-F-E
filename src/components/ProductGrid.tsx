@@ -345,6 +345,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											isExpanded={isExpanded}
 											onExpand={() => onProductExpand?.(product.id)}
 											isLastColumn={isLastColumn}
+											isMobile={isMobileLayout}
 										/>
 									</div>
 								);
