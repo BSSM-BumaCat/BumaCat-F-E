@@ -262,23 +262,25 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 								const currentRow = Math.floor(index / layoutConfig.cols);
 								const currentCol = index % layoutConfig.cols;
 								
-								// 4번째 열(인덱스 3)에서 확대될 때의 특별 처리
-								const isFourthColumn = currentCol === 3;
+								// 마지막 열에서 확대될 때의 특별 처리 (모바일: 3열, 데스크탑: 4열)
+								const lastColumnIndex = layoutConfig.cols - 1;
+								const isLastColumn = currentCol === lastColumnIndex;
 								
 								// 확대된 상품이 있는지 확인
-								const expandedFourthColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === 3);
-								const hasExpandedFourthColumn = expandedFourthColumnIndex !== -1;
+								const expandedLastColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === lastColumnIndex);
+								const hasExpandedLastColumn = expandedLastColumnIndex !== -1;
 								
-								const expandedThirdColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === 2);
-								const hasExpandedThirdColumn = expandedThirdColumnIndex !== -1;
+								const secondLastColumnIndex = lastColumnIndex - 1;
+								const expandedSecondLastColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === secondLastColumnIndex);
+								const hasExpandedSecondLastColumn = expandedSecondLastColumnIndex !== -1;
 								
 								// 확대/축소에 따른 그리드 위치 및 span 설정
 								let gridColumn, gridRow;
 								
 								if (isExpanded) {
-									if (isFourthColumn) {
-										// 4번째 열에서 확대 시 3-4열 위치로 설정
-										gridColumn = `3 / span 2`;
+									if (isLastColumn) {
+										// 마지막 열에서 확대 시 마지막 2열 위치로 설정 (모바일: 2-3열, 데스크탑: 3-4열)
+										gridColumn = `${secondLastColumnIndex + 1} / span 2`;
 										gridRow = `${currentRow + 1} / span 2`;
 									} else {
 										// 다른 열에서는 원래 위치에서 확대
@@ -287,14 +289,14 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 									}
 								} else {
 									// 축소 상태 처리
-									if (isFourthColumn) {
-										// 4번째 열 처리: 3번째 열이나 4번째 열에 확대된 상품이 있으면 자동 배치
-										if (hasExpandedFourthColumn || hasExpandedThirdColumn) {
+									if (isLastColumn) {
+										// 마지막 열 처리: 마지막 2열에 확대된 상품이 있으면 자동 배치
+										if (hasExpandedLastColumn || hasExpandedSecondLastColumn) {
 											gridColumn = 'span 1';
 											gridRow = 'span 1';
 										} else {
 											// 확대된 상품이 없을 때만 명시적 위치
-											gridColumn = `4 / span 1`;
+											gridColumn = `${lastColumnIndex + 1} / span 1`;
 											gridRow = `${currentRow + 1} / span 1`;
 										}
 									} else {
@@ -311,7 +313,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 										style={{
 											gridColumn,
 											gridRow,
-											justifySelf: isFourthColumn ? 'end' : undefined,
+											justifySelf: isLastColumn ? 'end' : undefined,
 										}}
 									>
 										<ProductCard
@@ -323,7 +325,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											isShaking={product.isShaking}
 											isExpanded={isExpanded}
 											onExpand={() => onProductExpand?.(product.id)}
-											isFourthColumn={isFourthColumn}
+											isLastColumn={isLastColumn}
 										/>
 									</div>
 								);

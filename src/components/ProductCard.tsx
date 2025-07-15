@@ -22,7 +22,7 @@ interface ProductCardProps {
 	isShaking?: boolean;
 	isExpanded?: boolean;
 	onExpand?: () => void;
-	isFourthColumn?: boolean;
+	isLastColumn?: boolean;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -34,7 +34,7 @@ const ProductCard = memo(function ProductCard({
 	isShaking,
 	isExpanded,
 	onExpand,
-	isFourthColumn,
+	isLastColumn,
 }: ProductCardProps) {
 	const [likeEffect, setLikeEffect] = useState(false);
 	const [previousLiked, setPreviousLiked] = useState(product.isLiked);
@@ -105,7 +105,7 @@ const ProductCard = memo(function ProductCard({
 				height: layoutConfig?.cardHeight || '15.65rem',
 				maxWidth: layoutConfig?.maxCardWidth,
 				maxHeight: layoutConfig?.maxCardHeight,
-				transformOrigin: isFourthColumn ? 'top right' : 'top left',
+				transformOrigin: isLastColumn ? 'top right' : 'top left',
 				transform: isExpanded ? 'scaleX(2.08) scaleY(2.064)' : 'scale(1)', // 너비: (2 * 12.5rem + 1rem) / 12.5rem = 2.08, 높이: (2 * 15.65rem + 1rem) / 15.65rem = 2.064
 			}}>
 			{/* 키보드 단축키 가이드 - 모든 상품에 오버레이 */}
