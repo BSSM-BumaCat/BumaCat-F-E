@@ -34,28 +34,39 @@ export interface ProductGridRef {
 }
 
 const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
-	({ products, onLikeToggle, searchTerm, onSearch, totalDonations, hoveredProduct, bounceAnimation, isDragging, keyPressed, shakingProduct, expandedProduct, onProductExpand }, ref) => {
+	(
+		{
+			products,
+			onLikeToggle,
+			searchTerm,
+			onSearch,
+			totalDonations,
+			hoveredProduct,
+			bounceAnimation,
+			isDragging,
+			keyPressed,
+			shakingProduct,
+			expandedProduct,
+			onProductExpand,
+		},
+		ref,
+	) => {
 		const [isLayoutReady, setIsLayoutReady] = useState(false);
 		const scrollContainerRef = useRef<HTMLDivElement>(null);
-		
-		
+
 		// Custom hooks로 복잡한 로직 캡슐화
 		const { layoutConfig, isTouch, isMobile } = useDeviceLayout();
 		const {
 			isVisible: isSearchBarVisible,
 			scrollTop,
-			handleScroll: handleScrollAnimation
+			handleScroll: handleScrollAnimation,
 		} = useScrollAnimation({
 			threshold: 10,
 			showDirection: 'up',
 			hideDirection: 'down',
-			enabled: isTouch && layoutConfig.cols <= 4
+			enabled: isTouch && layoutConfig.cols <= 4,
 		});
-		const {
-			isSearchVisible,
-			handleMouseEnter,
-			handleMouseLeave
-		} = useSearchBehavior({ hideDelay: 1000 });
+		const { isSearchVisible, handleMouseEnter, handleMouseLeave } = useSearchBehavior({ hideDelay: 1000 });
 
 		// 외부에서 스크롤 제어할 수 있는 함수 노출
 		useImperativeHandle(ref, () => ({
@@ -70,10 +81,13 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 		}));
 
 		// 통합된 스크롤 핸들러 (useCallback으로 메모이제이션)
-		const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-			// 스크롤 애니메이션 훅의 핸들러 호출
-			handleScrollAnimation(e);
-		}, [handleScrollAnimation]);
+		const handleScroll = useCallback(
+			(e: React.UIEvent<HTMLDivElement>) => {
+				// 스크롤 애니메이션 훅의 핸들러 호출
+				handleScrollAnimation(e);
+			},
+			[handleScrollAnimation],
+		);
 
 		// 렌더링 안정화 및 레이아웃 준비 상태 관리
 		useEffect(() => {
@@ -165,39 +179,34 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 		}, [isLayoutReady]);
 
 		// 디바이스 레이아웃은 useDeviceLayout 훅에서 자동 관리됨
-		
+
 		// 스타일 계산 메모이제이션으로 성능 최적화
 		const gridStyles = useMemo(() => {
 			const baseStyles = calculateGridStyles(layoutConfig, searchTerm, isTouch);
-			
+
 			// 확대된 상품이 있을 때도 기본 그리드 유지 (4열)
 			return baseStyles;
 		}, [layoutConfig, searchTerm, isTouch]);
-		
-		const containerStyles = useMemo(() => 
-			calculateContainerStyles(layoutConfig), 
-			[layoutConfig]
+
+		const containerStyles = useMemo(() => calculateContainerStyles(layoutConfig), [layoutConfig]);
+
+		const cardStyles = useMemo(() => calculateCardStyles(layoutConfig), [layoutConfig]);
+
+		const searchBarClasses = useMemo(
+			() => calculateSearchBarClasses(layoutConfig, isSearchBarVisible, isTouch),
+			[layoutConfig, isSearchBarVisible, isTouch],
 		);
-		
-		const cardStyles = useMemo(() => 
-			calculateCardStyles(layoutConfig), 
-			[layoutConfig]
-		);
-		
-		const searchBarClasses = useMemo(() => 
-			calculateSearchBarClasses(layoutConfig, isSearchBarVisible, isTouch), 
-			[layoutConfig, isSearchBarVisible, isTouch]
-		);
-		
+
 		// ProductCard props 메모이제이션
-		const memoizedProducts = useMemo(() => 
-			products?.map((product) => ({
-				...product,
-				isHovered: hoveredProduct?.id === product.id,
-				isShaking: shakingProduct === product.id,
-				isExpanded: expandedProduct === product.id
-			})) || [], 
-			[products, hoveredProduct?.id, shakingProduct, expandedProduct]
+		const memoizedProducts = useMemo(
+			() =>
+				products?.map((product) => ({
+					...product,
+					isHovered: hoveredProduct?.id === product.id,
+					isShaking: shakingProduct === product.id,
+					isExpanded: expandedProduct === product.id,
+				})) || [],
+			[products, hoveredProduct?.id, shakingProduct, expandedProduct],
 		);
 
 		return (
@@ -223,10 +232,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 									gridTemplateColumns: `repeat(${layoutConfig.cols}, minmax(0, 1fr))`,
 								}}>
 								{products.map((product) => (
-									<div
-										key={`blur-${product.id}`}
-										className="relative overflow-visible"
-										style={cardStyles}>
+									<div key={`blur-${product.id}`} className="relative overflow-visible" style={cardStyles}>
 										{/* 원본 이미지 블러 처리 */}
 										<div
 											className="absolute -inset-1 bg-cover bg-center filter blur-xl opacity-15"
@@ -254,68 +260,81 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 							bounceAnimation === 'top' ? 'animate-bounce-top' : bounceAnimation === 'bottom' ? 'animate-bounce-bottom' : ''
 						}`}>
 						{/* 메인 제품 그리드 - 모든 상품 렌더링 */}
-						<div
-							className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out"
-							style={gridStyles}>
+						<div className="grid gap-4 w-fit relative z-20 transition-all duration-300 ease-in-out" style={gridStyles}>
 							{memoizedProducts.map((product, index) => {
 								const isExpanded = product.isExpanded;
 								const currentRow = Math.floor(index / layoutConfig.cols);
 								const currentCol = index % layoutConfig.cols;
-								
-								// 마지막 열에서 확대될 때의 특별 처리 (모바일: 3열, 데스크탑: 4열)
+
+								// 모바일과 데스크탑 구분하여 확대 로직 처리
+								const isMobileLayout = layoutConfig.cols === 2;
 								const lastColumnIndex = layoutConfig.cols - 1;
 								const isLastColumn = currentCol === lastColumnIndex;
-								
-								// 확대된 상품이 있는지 확인
-								const expandedLastColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === lastColumnIndex);
-								const hasExpandedLastColumn = expandedLastColumnIndex !== -1;
-								
-								const secondLastColumnIndex = lastColumnIndex - 1;
-								const expandedSecondLastColumnIndex = memoizedProducts.findIndex(p => p.isExpanded && memoizedProducts.indexOf(p) % layoutConfig.cols === secondLastColumnIndex);
-								const hasExpandedSecondLastColumn = expandedSecondLastColumnIndex !== -1;
-								
+
 								// 확대/축소에 따른 그리드 위치 및 span 설정
 								let gridColumn, gridRow;
-								
+
 								if (isExpanded) {
-									if (isLastColumn) {
-										// 마지막 열에서 확대 시 마지막 2열 위치로 설정 (모바일: 2-3열, 데스크탑: 3-4열)
-										gridColumn = `${secondLastColumnIndex + 1} / span 2`;
-										gridRow = `${currentRow + 1} / span 2`;
+									if (isMobileLayout) {
+										// 모바일(2열): 오른쪽 열은 왼쪽으로 이동해서 확대
+										if (currentCol === 1) {
+											// 오른쪽 열(1열) 확대 시 왼쪽으로 이동
+											gridColumn = `1 / span 2`;
+											gridRow = `${currentRow + 1} / span 2`;
+										} else {
+											// 왼쪽 열(0열) 확대 시 그대로
+											gridColumn = `1 / span 2`;
+											gridRow = `${currentRow + 1} / span 2`;
+										}
 									} else {
-										// 다른 열에서는 원래 위치에서 확대
-										gridColumn = `${currentCol + 1} / span 2`;
-										gridRow = `${currentRow + 1} / span 2`;
+										// 데스크탑(4열): 기존 로직 유지
+										if (isLastColumn) {
+											gridColumn = `${lastColumnIndex} / span 2`;
+											gridRow = `${currentRow + 1} / span 2`;
+										} else {
+											gridColumn = `${currentCol + 1} / span 2`;
+											gridRow = `${currentRow + 1} / span 2`;
+										}
 									}
 								} else {
 									// 축소 상태 처리
-									if (isLastColumn) {
-										// 마지막 열 처리: 마지막 2열에 확대된 상품이 있으면 자동 배치
-										if (hasExpandedLastColumn || hasExpandedSecondLastColumn) {
+									if (isMobileLayout) {
+										const expandedProduct = memoizedProducts.find((p) => p.isExpanded);
+
+										if (expandedProduct) {
+											// 확대된 상품이 있을 때는 모든 다른 상품들이 자동 배치로 밀려남
 											gridColumn = 'span 1';
 											gridRow = 'span 1';
 										} else {
-											// 확대된 상품이 없을 때만 명시적 위치
-											gridColumn = `${lastColumnIndex + 1} / span 1`;
+											// 확대된 상품이 없을 때는 정상 위치
+											gridColumn = `${currentCol + 1} / span 1`;
 											gridRow = `${currentRow + 1} / span 1`;
 										}
 									} else {
-										// 다른 열들은 자동 배치로 자연스러운 flow
 										gridColumn = 'span 1';
 										gridRow = 'span 1';
 									}
 								}
-								
+
 								return (
-									<div 
+									<div
 										key={product.id}
 										className={`transition-all duration-500 ease-in-out`}
 										style={{
 											gridColumn,
 											gridRow,
 											justifySelf: isLastColumn ? 'end' : undefined,
-										}}
-									>
+											order: index, // 원래 순서 유지
+											// 확대된 상품은 실제 높이를 늘려서 아래쪽 밀어내기
+											...(isMobileLayout &&
+												isExpanded && {
+													// 2x2 확대 시 정확한 크기 계산
+													// 카드 높이: 250.4px, gap: 16px
+													// 총 필요 높이: 2 * 250.4px + 16px = 516.8px
+													// 추가로 필요한 높이: 516.8px - 250.4px = 266.4px
+													paddingBottom: '14.35rem', // 정확한 추가 공간
+												}),
+										}}>
 										<ProductCard
 											product={product}
 											onLikeToggle={onLikeToggle}
@@ -339,12 +358,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 								{/* 터치 디바이스에서는 스크롤 방향에 따라 표시/숨김 */}
 								{isTouch && layoutConfig.cols <= 4 ? (
 									<div className={searchBarClasses}>
-										<SearchBar
-											searchTerm={searchTerm}
-											onSearch={onSearch}
-											totalDonations={totalDonations}
-											compact={isMobile}
-										/>
+										<SearchBar searchTerm={searchTerm} onSearch={onSearch} totalDonations={totalDonations} compact={isMobile} />
 									</div>
 								) : (
 									/* 데스크톱에서는 호버로 표시 */
@@ -356,12 +370,7 @@ const ProductGrid = forwardRef<ProductGridRef, ProductGridProps>(
 											className={`transition-all duration-600 ${
 												isSearchVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
 											}`}>
-											<SearchBar
-												searchTerm={searchTerm}
-												onSearch={onSearch}
-												totalDonations={totalDonations}
-												compact={isMobile}
-											/>
+											<SearchBar searchTerm={searchTerm} onSearch={onSearch} totalDonations={totalDonations} compact={isMobile} />
 										</div>
 									</div>
 								)}

@@ -106,7 +106,7 @@ const ProductCard = memo(function ProductCard({
 				maxWidth: layoutConfig?.maxCardWidth,
 				maxHeight: layoutConfig?.maxCardHeight,
 				transformOrigin: isLastColumn ? 'top right' : 'top left',
-				transform: isExpanded ? 'scaleX(2.08) scaleY(2.064)' : 'scale(1)', // 너비: (2 * 12.5rem + 1rem) / 12.5rem = 2.08, 높이: (2 * 15.65rem + 1rem) / 15.65rem = 2.064
+				transform: isExpanded ? 'scaleX(2.09) scaleY(2.064)' : 'scale(1)', // 너비: (2 * 12.5rem + 1rem) / 12.5rem = 2.08, 높이: (2 * 15.65rem + 1rem) / 15.65rem = 2.064
 			}}>
 			{/* 키보드 단축키 가이드 - 모든 상품에 오버레이 */}
 			{keyPressed && <div className="absolute inset-0 bg-black/70 transition-all duration-200 ease-in-out z-30" />}
