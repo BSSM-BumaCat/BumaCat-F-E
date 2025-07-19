@@ -1,4 +1,4 @@
-import type { Product } from "./Root";
+import type { Product } from "./types/product.types";
 
 const API_BASE = "https://localhost:8080"; // 서버 API 엔드포인트
 const USE_SERVER = import.meta.env['VITE_SERVER'] === '1';
@@ -10,70 +10,136 @@ const MOCK_PRODUCTS: Product[] = [
     name: "개멋진 초록색 자동차",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop",
-    description: "친환경 전기차"
+    description: "친환경 전기차로 조용하고 경제적입니다. 도심 주행에 최적화되어 있으며, 충전 한 번으로 300km 주행 가능합니다.",
+    condition: "중고 - 상",
+    donorName: "김환경",
+    images: [
+      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1494976688994-7239c8e9d8a9?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1542362567-b07e54358753?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 2,
     name: "반짝반짝 빛나는 자동차",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400&h=300&fit=crop",
-    description: "럭셔리 세단"
+    description: "고급 럭셔리 세단으로 부드러운 승차감과 우아한 디자인이 특징입니다. 내부 시설도 매우 깔끔합니다.",
+    condition: "신품",
+    donorName: "박럭셔리",
+    images: [
+      "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 3,
     name: "도쿄 OOO 임대",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
-    description: "도심 아파트"
+    description: "도심 중심가에 위치한 깔끔한 아파트입니다. 교통이 편리하고 주변 시설이 잘 되어 있습니다.",
+    condition: "중고 - 중",
+    donorName: "이부동산",
+    images: [
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 4,
     name: "튤립 팝니다. (노란색, 핑크색 ..",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1520763185298-1b434c919102?w=400&h=300&fit=crop",
-    description: "봄꽃 튤립"
+    description: "봄꽃 튤립",
+    images: [
+      "https://images.unsplash.com/photo-1520763185298-1b434c919102?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1524386416438-98b9b2d4b433?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1463436294369-64659f0ce2f1?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 5,
     name: "창의관 앞 기절했던 참새",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1551763345-31a4c5c3ca76?w=400&h=300&fit=crop",
-    description: "귀여운 참새"
+    description: "귀여운 참새",
+    images: [
+      "https://images.unsplash.com/photo-1551763345-31a4c5c3ca76?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1553787151-6064db190d34?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1470093851219-69951fcbb533?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1520808663317-647b476c4c2c?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 6,
     name: "코딩 10시간 해드려요",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
-    description: "프로그래밍 서비스"
+    description: "프로그래밍 서비스",
+    images: [
+      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 7,
     name: "기숙사 왼쪽 침대 나눠줍니다.",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop",
-    description: "기숙사 침대"
+    description: "기숙사 침대",
+    images: [
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1540932239986-30128078f3c5?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1571508601136-ae88a2b7e765?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 8,
     name: "AI로 만든 햄버거 (못먹음)",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
-    description: "인공지능 햄버거"
+    description: "인공지능 햄버거",
+    images: [
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1550317138-10000687a72b?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1586816001966-79b736744398?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 9,
     name: "35MM CO 카메라",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400&h=300&fit=crop",
-    description: "빈티지 필름카메라"
+    description: "빈티지 필름카메라",
+    images: [
+      "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 10,
     name: "ON OFF 되는 카메라",
     price: 120000,
     imageUrl: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop",
-    description: "디지털 카메라"
+    description: "디지털 카메라",
+    images: [
+      "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=300&fit=crop",
+      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400&h=300&fit=crop"
+    ]
   },
   {
     id: 11,

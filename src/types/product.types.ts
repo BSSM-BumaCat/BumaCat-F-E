@@ -9,6 +9,9 @@ export interface Product {
   price: number;
   imageUrl: string;
   description: string;
+  images?: string[];
+  condition?: string;
+  donorName?: string;
 }
 
 // 즐겨찾기 정보가 포함된 상품

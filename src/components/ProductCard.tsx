@@ -1,11 +1,6 @@
-import { useState, useEffect, memo } from 'react';
-import type { Product } from '../Root';
+import { useState, useEffect, memo, useRef } from 'react';
+import type { ProductWithFavorites } from '../types/product.types';
 import FavoriteIcon from './FavoriteIcon';
-
-type ProductWithFavorites = Product & {
-	favorites?: number;
-	isLiked?: boolean;
-};
 
 interface ProductCardProps {
 	product: ProductWithFavorites;
@@ -44,6 +39,84 @@ const ProductCard = memo(function ProductCard({
 	// 애니메이션 리셋을 위한 상태
 	const [animationKey, setAnimationKey] = useState(0);
 
+	// 스토리 슬라이더 상태
+	const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
+	const [touchStartX, setTouchStartX] = useState(0);
+	const [touchStartY, setTouchStartY] = useState(0);
+	const [isSwipeInProgress, setIsSwipeInProgress] = useState(false);
+	const [isStoryPlaying, setIsStoryPlaying] = useState(false);
+	const [progressKey, setProgressKey] = useState(0);
+	const [pausedProgress, setPausedProgress] = useState(0);
+	const [storyStartTime, setStoryStartTime] = useState(0);
+	const storyContainerRef = useRef<HTMLDivElement>(null);
+	const storyTimerRef = useRef<number | null>(null);
+
+	// 스토리 데이터 생성 (이미지들 + 마지막 설명 슬라이드)
+	const storySlides = [
+		...(product.images || [product.imageUrl]),
+		'description', // 마지막 슬라이드는 설명
+	];
+
+	// 확대 상태 변경 시 스토리 인덱스 리셋 및 자동 재생 시작 (데스크탑만)
+	useEffect(() => {
+		if (isExpanded) {
+			setCurrentStoryIndex(0);
+			// 터치 디바이스가 아닌 경우에만 자동 재생 활성화
+			const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+			setIsStoryPlaying(!isTouch);
+			setProgressKey(0);
+			setPausedProgress(0);
+			setStoryStartTime(Date.now());
+		} else {
+			setIsStoryPlaying(false);
+			if (storyTimerRef.current) {
+				window.clearTimeout(storyTimerRef.current);
+				storyTimerRef.current = null;
+			}
+		}
+	}, [isExpanded]);
+
+	// 스토리 자동 재생 로직
+	useEffect(() => {
+		if (!isExpanded || !isStoryPlaying) return;
+
+		const startStoryTimer = () => {
+			if (storyTimerRef.current) {
+				window.clearTimeout(storyTimerRef.current);
+			}
+
+			// 설명 슬라이드는 더 오래 보여주기 (5초), 이미지는 3초
+			const totalDuration = storySlides[currentStoryIndex] === 'description' ? 5000 : 3000;
+			// 일시정지되었던 시간만큼 빼기
+			const remainingDuration = totalDuration - pausedProgress * totalDuration;
+
+			setStoryStartTime(Date.now() - pausedProgress * totalDuration);
+
+			storyTimerRef.current = window.setTimeout(() => {
+				goToNextStory();
+			}, remainingDuration);
+		};
+
+		startStoryTimer();
+
+		return () => {
+			if (storyTimerRef.current) {
+				window.clearTimeout(storyTimerRef.current);
+				storyTimerRef.current = null;
+			}
+		};
+	}, [currentStoryIndex, isExpanded, isStoryPlaying]);
+
+	// 컴포넌트 언마운트 시 타이머 정리
+	useEffect(() => {
+		return () => {
+			if (storyTimerRef.current) {
+				window.clearTimeout(storyTimerRef.current);
+				storyTimerRef.current = null;
+			}
+		};
+	}, []);
+
 	// isShaking 변화 감지하여 애니메이션 리셋
 	useEffect(() => {
 		if (isShaking) {
@@ -67,6 +140,155 @@ const ProductCard = memo(function ProductCard({
 	const triggerShake = () => {
 		setIsKeyboardShaking(true);
 		setTimeout(() => setIsKeyboardShaking(false), 500);
+	};
+
+	// 스토리 네비게이션 함수들
+	const goToNextStory = () => {
+		if (currentStoryIndex < storySlides.length - 1) {
+			setCurrentStoryIndex((prev) => prev + 1);
+			// 프로그레스 애니메이션 리셋
+			setProgressKey((prev) => prev + 1);
+			setPausedProgress(0);
+			setStoryStartTime(Date.now());
+			// 터치 디바이스가 아닌 경우에만 자동 재생 계속
+			const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+			setIsStoryPlaying(!isTouch);
+		} else {
+			// 마지막 스토리에서 다음으로 가려고 하면 카드 축소
+			onExpand?.();
+		}
+	};
+
+	const goToPrevStory = () => {
+		if (currentStoryIndex > 0) {
+			setCurrentStoryIndex((prev) => prev - 1);
+			// 프로그레스 애니메이션 리셋
+			setProgressKey((prev) => prev + 1);
+			setPausedProgress(0);
+			setStoryStartTime(Date.now());
+			// 터치 디바이스가 아닌 경우에만 자동 재생 계속
+			const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+			setIsStoryPlaying(!isTouch);
+		} else {
+			// 첫 번째 스토리에서 이전으로 가려고 하면 카드 축소
+			onExpand?.();
+		}
+	};
+
+	const goToStory = (index: number) => {
+		if (index >= 0 && index < storySlides.length) {
+			setCurrentStoryIndex(index);
+			// 터치 디바이스가 아닌 경우에만 자동 재생 활성화
+			const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+			setIsStoryPlaying(!isTouch);
+			// 프로그레스 애니메이션 리셋
+			setProgressKey((prev) => prev + 1);
+			setPausedProgress(0);
+			setStoryStartTime(Date.now());
+		}
+	};
+
+	// 스토리 자동 재생 일시정지/재시작
+	const pauseStory = () => {
+		if (isStoryPlaying) {
+			// 현재 진행률 계산
+			const now = Date.now();
+			const elapsed = now - storyStartTime;
+			const totalDuration = storySlides[currentStoryIndex] === 'description' ? 5000 : 3000;
+			const currentProgress = Math.min(elapsed / totalDuration, 1);
+			setPausedProgress(currentProgress);
+		}
+		setIsStoryPlaying(false);
+		if (storyTimerRef.current) {
+			window.clearTimeout(storyTimerRef.current);
+			storyTimerRef.current = null;
+		}
+	};
+
+	const resumeStory = () => {
+		// 터치 디바이스가 아닌 경우에만 자동 재생 재시작
+		const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		if (!isTouch) {
+			setIsStoryPlaying(true);
+		}
+		// 프로그레스 애니메이션은 현재 위치에서 계속 - progressKey 변경하지 않음
+	};
+
+	// 터치 이벤트 핸들러
+	const handleTouchStart = (e: React.TouchEvent) => {
+		if (!isExpanded) return;
+
+		const touch = e.touches[0];
+		if (touch) {
+			setTouchStartX(touch.clientX);
+			setTouchStartY(touch.clientY);
+			setIsSwipeInProgress(true);
+			// 터치 시작 시 자동 재생 일시정지
+			pauseStory();
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent) => {
+		if (!isExpanded || !isSwipeInProgress) return;
+
+		// 스와이프 중 스크롤 방지
+		e.preventDefault();
+	};
+
+	const handleTouchEnd = (e: React.TouchEvent) => {
+		if (!isExpanded || !isSwipeInProgress) return;
+
+		const touch = e.changedTouches[0];
+		if (touch) {
+			const deltaX = touch.clientX - touchStartX;
+			const deltaY = touch.clientY - touchStartY;
+
+			// 수직 스와이프보다 수평 스와이프가 더 클 때만 처리
+			if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+				if (deltaX > 0) {
+					goToPrevStory();
+				} else {
+					goToNextStory();
+				}
+			} else {
+				// 스와이프하지 않았으면 자동 재생 재시작 (progressKey 변경 없이)
+				resumeStory();
+			}
+		}
+
+		setIsSwipeInProgress(false);
+	};
+
+	// 마우스 클릭 네비게이션 (확대된 상태에서만)
+	const handleStoryClick = (e: React.MouseEvent) => {
+		if (!isExpanded) return;
+
+		e.stopPropagation();
+
+		const rect = storyContainerRef.current?.getBoundingClientRect();
+		if (!rect) return;
+
+		const clickX = e.clientX - rect.left;
+		const centerX = rect.width / 2;
+
+		if (clickX < centerX) {
+			goToPrevStory();
+		} else {
+			goToNextStory();
+		}
+	};
+
+	// 마우스 호버 시 자동 재생 일시정지
+	const handleMouseEnter = () => {
+		if (isExpanded) {
+			pauseStory();
+		}
+	};
+
+	const handleMouseLeave = () => {
+		if (isExpanded) {
+			resumeStory();
+		}
 	};
 
 	// 마우스 클릭 이벤트 처리
@@ -101,7 +323,7 @@ const ProductCard = memo(function ProductCard({
 		<div
 			className={`relative cursor-pointer group transition-all duration-500 ease-in-out`}
 			data-product-id={product.id}
-			onClick={handleClick}
+			onClick={isExpanded ? undefined : handleClick}
 			style={{
 				width: layoutConfig?.cardWidth || '12.5rem',
 				height: layoutConfig?.cardHeight || '15.65rem',
@@ -171,7 +393,24 @@ const ProductCard = memo(function ProductCard({
 				</div>
 			)}
 
-			<div className="w-full h-full bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${product.imageUrl})` }}>
+			<div
+				className="w-full h-full bg-cover bg-center relative overflow-hidden"
+				style={{
+					backgroundImage: `url(${
+						isExpanded
+							? storySlides[currentStoryIndex] === 'description'
+								? product.imageUrl
+								: storySlides[currentStoryIndex]
+							: product.imageUrl
+					})`,
+				}}
+				ref={storyContainerRef}
+				onTouchStart={handleTouchStart}
+				onTouchMove={handleTouchMove}
+				onTouchEnd={handleTouchEnd}
+				onMouseEnter={handleMouseEnter}
+				onMouseLeave={handleMouseLeave}
+				onClick={isExpanded ? handleStoryClick : handleClick}>
 				{/* 기본 그라데이션 오버레이 - 확대 상태에서는 숨김 */}
 				{!isExpanded && (
 					<div
@@ -277,6 +516,70 @@ const ProductCard = memo(function ProductCard({
 								</div>
 							</>
 						)}
+					</div>
+				)}
+
+				{/* 확대 상태에서의 스토리 인디케이터 - 더 하단에 위치 */}
+				{isExpanded && (
+					<div className="absolute bottom-1.5 left-1.5 right-1.5 flex gap-1 z-20">
+						{storySlides.map((_, index) => (
+							<div
+								key={index}
+								className="h-1 flex-1 rounded-full bg-white/30 cursor-pointer overflow-hidden"
+								onClick={(e) => {
+									e.stopPropagation();
+									goToStory(index);
+								}}>
+								{/* 프로그레스바 애니메이션 */}
+								<div
+									key={`progress-${index}-${progressKey}`}
+									className={`h-full bg-white rounded-full ${
+										index === currentStoryIndex && isStoryPlaying
+											? 'animate-story-progress'
+											: index < currentStoryIndex
+											? 'w-full'
+											: index === currentStoryIndex && !isStoryPlaying
+											? '' // 일시정지 상태는 별도 스타일 적용
+											: 'w-0'
+									}`}
+									style={{
+										...(index === currentStoryIndex && isStoryPlaying
+											? {
+													animationDuration: `${storySlides[currentStoryIndex] === 'description' ? '5000ms' : '3000ms'}`,
+													animationDelay: `${-pausedProgress * (storySlides[currentStoryIndex] === 'description' ? 5000 : 3000)}ms`,
+											  }
+											: index === currentStoryIndex && !isStoryPlaying
+											? {
+													width: `${pausedProgress * 100}%`,
+													transition: 'none', // 일시정지 시 transition 제거
+											  }
+											: {}),
+									}}
+								/>
+							</div>
+						))}
+					</div>
+				)}
+
+				{/* 확대 상태에서의 설명 슬라이드 */}
+				{isExpanded && storySlides[currentStoryIndex] === 'description' && (
+					<div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black/95 flex flex-col p-4">
+						<div className="text-white text-[0.6rem]">
+							{/* 상품명 */}
+							<div className="text-[0.75rem]">{product.name}</div>
+
+							<div className="flex text-[0.875rem] gap-1 font-bold">
+								<p className="">기부자</p>
+								<p className="">{product.donorName || '익명'}</p>
+							</div>
+							{/* 가격 */}
+							<div className="">{product.price.toLocaleString()}원</div>
+
+							{/* 상품 상태 및 기부자 */}
+							<p className="">{product.condition || '정보 없음'}</p>
+							{/* 상품 설명 */}
+							<p className="">{product.description}</p>
+						</div>
 					</div>
 				)}
 
@@ -441,6 +744,21 @@ const ProductCard = memo(function ProductCard({
 						animation: none !important;
 						opacity: 1 !important;
 						transform: scale(1.1) translateX(0) !important;
+					}
+				`}</style>
+			)}
+
+			{/* 스토리 프로그레스바 애니메이션 CSS */}
+			{isExpanded && (
+				<style>{`
+					@keyframes storyProgress {
+						0% { width: 0%; }
+						100% { width: 100%; }
+					}
+					
+					.animate-story-progress {
+						animation: storyProgress linear;
+						animation-fill-mode: forwards;
 					}
 				`}</style>
 			)}
